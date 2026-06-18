@@ -544,7 +544,7 @@ export default function App() {
           )}
 
           {/* ACTIVE CABINET WINDOW */}
-          <div className="flex-1 overflow-hidden flex flex-col h-full">
+          <div className="flex-1 overflow-hidden flex flex-col">
             {currentTabComponent()}
           </div>
 

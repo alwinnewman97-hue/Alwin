@@ -71,17 +71,17 @@ export default function ScienceTab({ store }: ScienceTabProps) {
               }`}
             >
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <h4 className="font-bold text-xs sm:text-sm theme-text-main truncate">{s.name}</h4>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h4 className="font-bold text-xs sm:text-sm theme-text-main">{s.name}</h4>
                   {isResearched && (
-                    <span className="px-1 py-0.2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[8px] font-bold rounded">
+                    <span className="px-1 py-0.2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[8px] font-bold rounded shrink-0">
                       Learned
                     </span>
                   )}
                 </div>
                 
                 {/* Effect subtext */}
-                <p className="text-[10px] theme-text-sec mt-1 truncate">{s.effectsDesc}</p>
+                <p className="text-[10px] theme-text-sec mt-1.5 leading-normal break-words whitespace-normal">{s.effectsDesc}</p>
 
                 {/* Inline Costs */}
                 {!isResearched && (

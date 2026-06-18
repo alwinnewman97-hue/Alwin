@@ -69,8 +69,8 @@ export default function BonfireTab({ store }: BonfireTabProps) {
               }`}
             >
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <h4 className="font-bold text-xs sm:text-sm theme-text-main truncate">{b.name}</h4>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <h4 className="font-bold text-xs sm:text-sm theme-text-main">{b.name}</h4>
                   {count > 0 && (
                     <span className="px-1.5 py-0.2 text-[9px] font-mono font-extrabold bg-amber-400/15 text-amber-300 rounded border border-amber-400/30">
                       {count}
