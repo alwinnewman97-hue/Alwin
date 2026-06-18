@@ -1,0 +1,6 @@
+{
+  "name": "Kittens Incremental",
+  "description": "An incremental game inspired by Kittens. Gather catnip, build an empire of kittens, and survive the offline time.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
