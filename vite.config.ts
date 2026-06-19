@@ -14,10 +14,10 @@ export default defineConfig(() => {
         registerType: 'autoUpdate',
         devOptions: { enabled: true },
         manifest: {
-          name: 'Kittens Incremental',
-          short_name: 'Kittens',
-          theme_color: '#111827',
-          background_color: '#111827',
+          name: 'Citadel Incremental',
+          short_name: 'Citadel',
+          theme_color: '#0b0f19',
+          background_color: '#0b0f19',
           display: 'standalone',
           icons: [
             { src: 'icon.svg', sizes: '192x192 512x512', type: 'image/svg+xml', purpose: 'any maskable' }

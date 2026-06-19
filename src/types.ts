@@ -106,6 +106,7 @@ export interface GameState {
   // Portal Crafting & Morty Certificates
   activeCertificates?: ActiveCertificateBoost[];
   craftedCertificatesCount?: Record<string, number>;
+  achievements?: Record<string, boolean>;
 
   // Progression unlocks
   unlocks: {

@@ -31,11 +31,12 @@ import BonfireTab from './components/BonfireTab';
 import TownTab from './components/TownTab';
 import ScienceTab from './components/ScienceTab';
 import WorkshopTab from './components/WorkshopTab';
+import AchievementsTab from './components/AchievementsTab';
 import { playClickSound } from './utils/audio';
 import { AnimatePresence, motion } from 'motion/react';
 import SplashStartup from './components/SplashStartup';
 
-type ActiveTabType = 'bonfire' | 'town' | 'science' | 'workshop';
+type ActiveTabType = 'bonfire' | 'town' | 'science' | 'workshop' | 'achievements';
 
 export default function App() {
   const store = useGameStore();
@@ -178,6 +179,8 @@ export default function App() {
         return <ScienceTab store={store} />;
       case 'workshop':
         return <WorkshopTab store={store} />;
+      case 'achievements':
+        return <AchievementsTab store={store} />;
       default:
         return <BonfireTab store={store} />;
     }
@@ -293,7 +296,7 @@ export default function App() {
               </button>
             )}
 
-            {store.unlocks.workshop && (
+             {store.unlocks.workshop && (
               <button
                 onClick={() => handleTabChange('workshop')}
                 className={`p-3 md:py-4 md:w-full rounded-2xl flex flex-col items-center gap-2 text-xs font-bold uppercase tracking-widest cursor-pointer portal-tab-btn relative ${
@@ -309,6 +312,21 @@ export default function App() {
                 )}
               </button>
             )}
+
+            <button
+              onClick={() => handleTabChange('achievements')}
+              className={`p-3 md:py-4 md:w-full rounded-2xl flex flex-col items-center gap-2 text-xs font-bold uppercase tracking-widest cursor-pointer portal-tab-btn relative ${
+                activeTab === 'achievements' 
+                  ? 'portal-tab-btn-active scale-100' 
+                  : 'text-[#39ff14]/90 scale-95'
+              }`}
+            >
+              <Award size={18} className={activeTab === 'achievements' ? 'text-[#39ff14] animate-pulse' : 'text-neutral-400'} />
+              <span className="text-[9px] md:text-[10px] hidden sm:block font-sans">Badges</span>
+              {activeTab === 'achievements' && (
+                <div className="portal-tab-indicator absolute bottom-0 left-6 right-6 h-[2px] md:left-0 md:top-4 md:bottom-4 md:w-[3px] md:h-auto rounded-full font-sans text-[#39ff14]/90" />
+              )}
+            </button>
           </div>
         </div>
 
@@ -343,7 +361,7 @@ export default function App() {
         <header className="w-full shrink-0 pt-8 sm:pt-10 px-5 sm:px-10 flex flex-col gap-6 z-20 relative">
           <div className="flex justify-between items-end relative">
              <h1 className="text-5xl sm:text-7xl font-black tracking-[-0.04em] opacity-5 theme-text-main uppercase leading-none select-none absolute -top-4 -left-2 pointer-events-none origin-left transform-gpu mix-blend-overlay">
-               {activeTab === 'bonfire' ? 'Citadel' : activeTab === 'town' ? 'Clone Bay' : activeTab === 'science' ? 'Labs' : 'Refinery'}
+               {activeTab === 'bonfire' ? 'Citadel' : activeTab === 'town' ? 'Clone Bay' : activeTab === 'science' ? 'Labs' : activeTab === 'workshop' ? 'Refinery' : 'Badges'}
              </h1>
              
              {/* Spacing element to push controls to the right */}

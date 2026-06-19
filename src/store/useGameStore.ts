@@ -13,6 +13,7 @@ import {
   ActiveCertificateBoost
 } from '../types';
 import { BUILDINGS, SCIENCES, JOBS, UPGRADES, SEASONS_DATA, generateRandomKitten } from '../gameData';
+import { ACHIEVEMENTS } from '../utils/achievements';
 
 export interface CertificateDef {
   id: 'bronze' | 'silver' | 'gold' | 'infinite';
@@ -156,6 +157,7 @@ export const useGameStore = create<GameState>()(
       },
       activeCertificates: [],
       craftedCertificatesCount: { bronze: 0, silver: 0, gold: 0, infinite: 0 },
+      achievements: {},
       season: {
         current: 'Spring',
         daysPassed: 0,
@@ -457,9 +459,59 @@ export const useGameStore = create<GameState>()(
           }
         });
 
+        // Assess live achievement milestones
+        const currentAchievements = state.achievements || {};
+        const updatedAchievements = { ...currentAchievements };
+        const tempState: GameState = {
+          ...state,
+          resources: {
+            catnip: { amount: catnipAmt, max: maxCatnip },
+            wood: { amount: woodAmt, max: maxWood },
+            minerals: { amount: mineralsAmt, max: maxMinerals },
+            iron: { amount: ironAmt, max: maxIron },
+            science: { amount: scienceAmt, max: maxScience },
+            culture: { amount: cultureAmt, max: 10000 },
+            parchment: { amount: state.resources.parchment.amount, max: 5000 },
+            beam: { amount: state.resources.beam.amount, max: 5000 },
+            slab: { amount: state.resources.slab.amount, max: 5000 },
+            plate: { amount: state.resources.plate.amount, max: 5000 },
+          },
+          village: {
+            kittens: updatedKittens,
+            maxKittens,
+            happiness: finalHappiness
+          },
+          unlocks,
+          buildings: state.buildings,
+          researched: state.researched,
+          upgrades: state.upgrades,
+          craftedCertificatesCount: state.craftedCertificatesCount || { bronze: 0, silver: 0, gold: 0, infinite: 0 }
+        } as any;
+
+        const logsToAppend: GameLogMessage[] = [];
+        ACHIEVEMENTS.forEach(ach => {
+          if (!updatedAchievements[ach.id] && ach.check(tempState)) {
+            updatedAchievements[ach.id] = true;
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            logsToAppend.push({
+              id: `ach-${ach.id}-${Math.random()}`,
+              time: timeStr,
+              text: `🏆 Achievement Unlocked: ${ach.name}! "${ach.quote}"`,
+              type: 'success'
+            });
+          }
+        });
+
+        let finalLogs = state.logs;
+        if (logsToAppend.length > 0) {
+          finalLogs = [...logsToAppend, ...state.logs].slice(0, 80);
+        }
+
         set({
           lastTick: now,
           activeCertificates: updatedActive,
+          achievements: updatedAchievements,
+          logs: finalLogs,
           season: {
             ...state.season,
             current: currentSeason,
@@ -916,6 +968,7 @@ export const useGameStore = create<GameState>()(
           ? persistedState.activeCertificates
           : [];
         const mergedCraftedCertificatesCount = persistedState.craftedCertificatesCount || { bronze: 0, silver: 0, gold: 0, infinite: 0 };
+        const mergedAchievements = persistedState.achievements || {};
 
         return {
           ...currentState,
@@ -928,6 +981,7 @@ export const useGameStore = create<GameState>()(
           village: mergedVillage,
           activeCertificates: mergedActiveCertificates,
           craftedCertificatesCount: mergedCraftedCertificatesCount,
+          achievements: mergedAchievements,
           theme: persistedState.theme === 'light' ? 'light' : 'dark',
           buyMultiplier: (persistedState.buyMultiplier === 1 || persistedState.buyMultiplier === 5 || persistedState.buyMultiplier === 25) 
             ? persistedState.buyMultiplier 
