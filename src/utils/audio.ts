@@ -86,3 +86,28 @@ export function playClickSound(soundType: 'click' | 'success' | 'build' | 'resea
     // browser blocked or unsupported context
   }
 }
+
+/**
+ * Triggers standard lightweight device vibration patterns on supported mobile environments
+ */
+export function triggerHaptic(type: 'click' | 'success' | 'build' | 'research' | 'wood' | 'error') {
+  try {
+    if (typeof window !== 'undefined' && typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+      if (type === 'build') {
+        navigator.vibrate(22); // Single punchy tactile click for building construction
+      } else if (type === 'research') {
+        navigator.vibrate([15, 30, 20]); // double pulse pattern for smart dimensional breakthrough
+      } else if (type === 'success') {
+        navigator.vibrate([15, 45, 15]); // joyous rapid double tap for progress milestones
+      } else if (type === 'wood') {
+        navigator.vibrate(10); // Extra short micro-tap for physical manual gathering clicks
+      } else if (type === 'click') {
+        navigator.vibrate(8); // Soft micro-vibration for general menu elements
+      } else if (type === 'error') {
+        navigator.vibrate([40, 50, 40]); // Dual buzz alert pattern for failed constraints
+      }
+    }
+  } catch (err) {
+    // Unsupported or blocked context
+  }
+}

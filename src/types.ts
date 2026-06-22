@@ -16,6 +16,7 @@ export type BuildingType =
   | 'pasture' 
   | 'hut' 
   | 'logHouse' 
+  | 'mansion' 
   | 'barn' 
   | 'warehouse' 
   | 'library' 
@@ -45,7 +46,8 @@ export type UpgradeType =
   | 'ironAxes' 
   | 'catnipSilos' 
   | 'reinforcedBarns' 
-  | 'expandedStorage';
+  | 'expandedStorage'
+  | 'portalHeaters';
 
 export type SeasonType = 'Spring' | 'Summer' | 'Autumn' | 'Winter';
 
@@ -127,6 +129,17 @@ export interface GameState {
   logs: GameLogMessage[];
   theme: 'dark' | 'light';
   buyMultiplier: 1 | 5 | 25;
+  insaneMode: boolean;
+  density: 'compact' | 'relaxed';
+  activeAnomaly: {
+    id: string;
+    type: 'fluid_leak' | 'fed_raid' | 'cromulon' | 'microverse_decay';
+    name: string;
+    desc: string;
+    durationLeft: number;
+    clicksRequired: number;
+    clicksMade: number;
+  } | null;
 
   // Actions
   tick: (deltaSeconds: number) => void;
@@ -134,6 +147,7 @@ export interface GameState {
   refineResource: (craftType: 'wood' | 'beam' | 'slab' | 'plate' | 'parchment', amount?: number) => void;
   buyBuilding: (type: BuildingType, quantity?: number) => void;
   assignJob: (kittenId: string, job: JobType | 'unemployed') => void;
+  assignJobsMultiple: (kittenIds: string[], job: JobType | 'unemployed') => void;
   autoAssignAll: (job: JobType) => void;
   unassignAll: () => void;
   researchScience: (type: ScienceType) => void;
@@ -146,4 +160,8 @@ export interface GameState {
   setTheme: (theme: 'dark' | 'light') => void;
   setBuyMultiplier: (multiplier: 1 | 5 | 25) => void;
   synthesizeCertificate: (certificateType: 'bronze' | 'silver' | 'gold' | 'infinite') => void;
+  toggleInsaneMode: () => void;
+  setDensity: (density: 'compact' | 'relaxed') => void;
+  defuseAnomalyClick: () => void;
+  defuseAnomalyInstant: () => void;
 }

@@ -1,7 +1,7 @@
 import React from 'react';
 import { GameState, UpgradeType, ResourceType } from '../types';
 import { UPGRADES } from '../gameData';
-import { playClickSound } from '../utils/audio';
+import { playClickSound, triggerHaptic } from '../utils/audio';
 import { CERTIFICATES } from '../store/useGameStore';
 import { 
   Hammer, 
@@ -23,14 +23,17 @@ interface WorkshopTabProps {
 }
 
 export default function WorkshopTab({ store }: WorkshopTabProps) {
+  const isCompact = store.density === 'compact';
 
   const handleBuyUpgrade = (id: UpgradeType) => {
     store.buyUpgrade(id);
+    triggerHaptic('research');
     if (store.soundEnabled) playClickSound('research');
   };
 
   const handleRefine = (craftType: 'wood' | 'beam' | 'slab' | 'plate' | 'parchment', amount: number) => {
     store.refineResource(craftType, amount);
+    triggerHaptic('wood');
     if (store.soundEnabled) playClickSound('wood');
   };
 
@@ -98,42 +101,58 @@ export default function WorkshopTab({ store }: WorkshopTabProps) {
     <div className="flex flex-col flex-1 pb-10">
       
       {/* SECTION HEADER */}
-      <div className="flex justify-between items-center pb-6 border-b border-white/5 mx-2 sm:mx-6 mt-4">
-        <span className="text-[10px] uppercase font-bold text-neutral-500 tracking-widest leading-none">Workshop Refining & Forge</span>
+      <div className={`flex justify-between items-center border-b border-white/5 transition-all duration-300 ${
+        isCompact ? 'pb-3 mx-2 mt-2 gap-2' : 'pb-6 mx-2 sm:mx-6 mt-4'
+      }`}>
+        <span className={`uppercase font-bold text-neutral-500 tracking-widest leading-none ${
+          isCompact ? 'text-[9px]' : 'text-[10px]'
+        }`}>Workshop Refining & Forge</span>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start mt-6 mx-2 sm:mx-6">
+      <div className={`grid grid-cols-1 lg:grid-cols-12 items-start transition-all duration-300 ${
+        isCompact ? 'gap-4 mt-4 mx-2' : 'gap-6 mt-6 mx-2 sm:mx-6'
+      }`}>
         
         {/* LEFT COLUMN: REFINING FORGE */}
-        <div className="lg:col-span-4 flex flex-col gap-4">
-          <span className="text-[10px] uppercase font-bold text-neutral-500 tracking-widest leading-none block font-sans">Crafter Line</span>
+        <div className={`flex flex-col ${isCompact ? 'lg:col-span-4 gap-2.5' : 'lg:col-span-4 gap-4'}`}>
+          <span className={`uppercase font-bold text-neutral-500 tracking-widest leading-none block font-sans ${
+            isCompact ? 'text-[9px]' : 'text-[10px]'
+          }`}>Crafter Line</span>
           
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2.5">
             {craftsList.map((craft) => {
               if (!craft.hasUnlocked) return null;
 
               return (
                 <div 
                   key={craft.id}
-                  className="p-4 flex items-center justify-between gap-3 transition-all duration-300 border border-neutral-900 bg-neutral-950/10 backdrop-blur-sm rounded-xl"
+                  className={`flex items-center justify-between gap-3 transition-all border border-neutral-900 bg-neutral-950/10 backdrop-blur-sm transition-all duration-300 ${
+                    isCompact ? 'p-2.5 rounded-lg' : 'p-4 rounded-xl'
+                  }`}
                 >
-                  <div className="min-w-0 flex items-center gap-3">
-                    <span className="text-xl shrink-0 p-1 bg-neutral-900/60 border border-white/5 rounded-lg">
+                  <div className="min-w-0 flex items-center gap-2.5">
+                    <span className={`shrink-0 p-1 bg-neutral-900/60 border border-white/5 rounded-lg transition-all ${
+                      isCompact ? 'text-lg' : 'text-xl'
+                    }`}>
                        {craft.id === 'wood' ? '⚡' : craft.id === 'beam' ? '🔗' : craft.id === 'slab' ? '🕋' : craft.id === 'plate' ? '🛡️' : '🌌'}
                     </span>
                     <div className="flex flex-col gap-0.5">
-                      <span className="font-bold text-sm text-white tracking-wide leading-none">
+                      <span className={`font-bold text-white tracking-wide leading-none transition-all ${
+                        isCompact ? 'text-xs' : 'text-sm'
+                      }`}>
                         {craft.label}
                       </span>
                       <span className="text-3xs text-neutral-500 font-mono">Cost: {craft.costsDesc}</span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex items-center gap-1 shrink-0">
                     <button
                       onClick={() => handleRefine(craft.id, 1)}
                       disabled={!craft.canCraft}
-                      className="px-2.5 py-1.5 text-3xs uppercase font-extrabold text-white border border-white/10 hover:bg-white/5 disabled:opacity-20 rounded cursor-pointer transition-all"
+                      className={`uppercase font-extrabold text-white border border-white/10 hover:bg-white/5 disabled:opacity-20 rounded cursor-pointer transition-all ${
+                        isCompact ? 'px-2 py-1 text-[9px]' : 'px-2.5 py-1.5 text-3xs'
+                      }`}
                     >
                       Craft
                     </button>
@@ -141,7 +160,9 @@ export default function WorkshopTab({ store }: WorkshopTabProps) {
                       <button
                         onClick={() => handleRefine(craft.id, multiplier)}
                         disabled={!craft.canCraft}
-                        className="px-2.5 py-1.5 text-3xs uppercase font-black bg-white text-black hover:opacity-90 disabled:opacity-20 rounded cursor-pointer transition-all"
+                        className={`uppercase font-black bg-white text-black hover:opacity-90 disabled:opacity-20 rounded cursor-pointer transition-all ${
+                          isCompact ? 'px-2 py-1 text-[9px]' : 'px-2.5 py-1.5 text-3xs'
+                        }`}
                       >
                         +{multiplier}
                       </button>
@@ -154,10 +175,14 @@ export default function WorkshopTab({ store }: WorkshopTabProps) {
         </div>
 
         {/* RIGHT COLUMN: PERMANENT UPGRADES & SCHEMATICS */}
-        <div className="lg:col-span-8 flex flex-col gap-4">
-          <span className="text-[10px] uppercase font-bold text-neutral-500 tracking-widest leading-none block font-sans">Permanent Upgrades</span>
+        <div className={`lg:col-span-8 flex flex-col gap-4`}>
+          <span className={`uppercase font-bold text-neutral-500 tracking-widest leading-none block font-sans ${
+            isCompact ? 'text-[9px]' : 'text-[10px]'
+          }`}>Permanent Upgrades</span>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className={`grid grid-cols-1 md:grid-cols-2 transition-all duration-300 ${
+            isCompact ? 'gap-3' : 'gap-4'
+          }`}>
             {(Object.entries(UPGRADES) as [UpgradeType, typeof UPGRADES[UpgradeType]][]).map(([id, u]) => {
               const isOwned = store.upgrades[id];
 
@@ -187,7 +212,9 @@ export default function WorkshopTab({ store }: WorkshopTabProps) {
               return (
                 <div 
                   key={id}
-                  className={`p-5 flex flex-col justify-between gap-4 transition-all duration-350 border rounded-xl bg-neutral-950/10 backdrop-blur-sm relative ${
+                  className={`flex flex-col justify-between transition-all duration-300 border rounded-xl bg-neutral-950/10 backdrop-blur-sm relative ${
+                    isCompact ? 'p-3.5 gap-2.5' : 'p-5 gap-4'
+                  } ${
                     isOwned 
                       ? 'border-neutral-900/30 opacity-45' 
                       : canAfford 
@@ -195,9 +222,11 @@ export default function WorkshopTab({ store }: WorkshopTabProps) {
                         : 'border-white/5 opacity-70'
                   }`}
                 >
-                  <div className="flex flex-col gap-2">
+                  <div className={`flex flex-col ${isCompact ? 'gap-1' : 'gap-2'}`}>
                     <div className="flex justify-between items-start gap-2">
-                      <h4 className="font-bold text-sm text-white tracking-wide">{u.name}</h4>
+                      <h4 className={`font-bold text-white tracking-wide transition-all ${
+                        isCompact ? 'text-xs sm:text-sm' : 'text-sm'
+                      }`}>{u.name}</h4>
                       {isOwned && (
                         <span className="px-1.5 py-0.2 border border-emerald-500/10 text-[#39ff14]/80 text-[8px] uppercase tracking-wider font-bold rounded bg-emerald-500/5 font-sans">
                           Acquired
@@ -205,11 +234,15 @@ export default function WorkshopTab({ store }: WorkshopTabProps) {
                       )}
                     </div>
                     
-                    <p className="text-xs text-neutral-400 font-sans leading-relaxed">{u.effectsDesc}</p>
+                    <p className={`text-neutral-400 font-sans leading-relaxed transition-all ${
+                      isCompact ? 'text-[11px] leading-snug' : 'text-xs'
+                    }`}>{u.effectsDesc}</p>
                   </div>
 
                   {!isOwned && (
-                    <div className="flex flex-col gap-3 pt-3 border-t border-white/[0.03]">
+                    <div className={`flex flex-col border-t border-white/[0.03] transition-all duration-300 ${
+                      isCompact ? 'gap-2 pt-2' : 'gap-3 pt-3'
+                    }`}>
                       <div className="flex flex-wrap gap-1">
                         {costsList}
                       </div>
@@ -217,7 +250,9 @@ export default function WorkshopTab({ store }: WorkshopTabProps) {
                       <button
                         onClick={() => handleBuyUpgrade(id)}
                         disabled={!canAfford}
-                        className={`w-full py-2 text-2xs uppercase tracking-widest font-bold flex items-center justify-center gap-1.5 rounded-lg transition-all cursor-pointer ${
+                        className={`w-full uppercase tracking-widest font-bold flex items-center justify-center gap-1.5 rounded-lg transition-all cursor-pointer ${
+                          isCompact ? 'py-1.5 text-[10px]' : 'py-2 text-2xs'
+                        } ${
                           canAfford 
                             ? 'bg-white text-black hover:bg-neutral-100 font-extrabold shadow-sm' 
                             : 'bg-white/5 border border-white/5 text-white/20 disabled:cursor-not-allowed font-medium'

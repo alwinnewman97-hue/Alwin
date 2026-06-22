@@ -13,6 +13,7 @@ export interface BuildingDef {
   baseCost: Partial<Record<ResourceType, number>>;
   costRatio: number;
   category: 'production' | 'storage' | 'residential' | 'scientific';
+  maxLimit?: number;
 }
 
 export interface JobDef {
@@ -60,17 +61,27 @@ export const BUILDINGS: Record<BuildingType, BuildingDef> = {
   },
   hut: {
     name: 'Garage Laboratory',
-    desc: 'Provides a workbench and standard camping quarters for up to 2 Mortys.',
+    desc: 'Provides a workbench and standard camping quarters for up to 2 Mortys. Max limit: 15.',
     baseCost: { wood: 5 },
     costRatio: 2.50,
-    category: 'residential'
+    category: 'residential',
+    maxLimit: 15
   },
   logHouse: {
     name: 'Citadel Dormitory',
-    desc: 'A high-density capsule accommodation unit providing comfortable lodgings for 1 Morty.',
+    desc: 'A high-density capsule accommodation unit providing comfortable lodgings for 1 Morty. Max limit: 30.',
     baseCost: { wood: 150, minerals: 60 },
     costRatio: 1.15, // standard build ratio
-    category: 'residential'
+    category: 'residential',
+    maxLimit: 30
+  },
+  mansion: {
+    name: 'Citadel Luxury Manor',
+    desc: 'An upscale, portal-secured estate for top-tier Mortys. Provides spaces for up to 4 Mortys. Max limit: 10.',
+    baseCost: { wood: 800, minerals: 450, iron: 120 },
+    costRatio: 1.25,
+    category: 'residential',
+    maxLimit: 10
   },
   barn: {
     name: 'Dimension Vault',
@@ -231,6 +242,12 @@ export const UPGRADES: Record<UpgradeType, UpgradeDef> = {
     desc: 'Microverse matrix contraction nodes that expand relative interior capacity.',
     cost: { science: 800, iron: 120, wood: 500 },
     effectsDesc: 'Increases Storage Depot capacity across all elements by +35%'
+  },
+  portalHeaters: {
+    name: 'Citadel Core Thermal Shielding',
+    desc: 'Sub-space thermal arrays that heat the Greenhouses during icy interdimensional periods.',
+    cost: { science: 650, iron: 100, wood: 300 },
+    effectsDesc: `Reduces Froopyland (Winter) crop penalty dramatically (min crop multiplier of 0.55 instead of 0.15)`
   }
 };
 

@@ -103,6 +103,7 @@ const BASE_BUILDINGS: Record<BuildingType, number> = {
   pasture: 0,
   hut: 0,
   logHouse: 0,
+  mansion: 0,
   barn: 0,
   warehouse: 0,
   library: 0,
@@ -127,12 +128,51 @@ const BASE_UPGRADES: Record<UpgradeType, boolean> = {
   ironAxes: false,
   catnipSilos: false,
   reinforcedBarns: false,
-  expandedStorage: false
+  expandedStorage: false,
+  portalHeaters: false
 };
 
 export const calculateCost = (baseCost: number, ratio: number, amount: number) => {
   return baseCost * Math.pow(ratio, amount);
 };
+
+export function calculateJobStrengths(kittens: Kitten[]): Record<JobType, number> {
+  const strengths: Record<JobType, number> = {
+    farmer: 0,
+    woodcutter: 0,
+    scholar: 0,
+    miner: 0,
+    priest: 0
+  };
+
+  if (!Array.isArray(kittens)) return strengths;
+
+  kittens.forEach(k => {
+    if (k.job !== 'unemployed' && strengths[k.job] !== undefined) {
+      // Base strength is 1.0. Plus 5% per level above 1
+      let multiplier = 1 + (k.level - 1) * 0.05;
+
+      // Trait-specific bonuses (+10%)
+      if (k.trait) {
+        if (k.job === 'farmer' && k.trait.includes('High Anxiety')) {
+          multiplier += 0.10;
+        } else if (k.job === 'woodcutter' && k.trait.includes('Adrenaline Rush')) {
+          multiplier += 0.10;
+        } else if (k.job === 'scholar' && k.trait.includes('Wubba Lubba')) {
+          multiplier += 0.10;
+        } else if (k.job === 'miner' && k.trait.includes('Sub-atomic')) {
+          multiplier += 0.10;
+        } else if (k.job === 'priest' && k.trait.includes('Ultra-Schwifty')) {
+          multiplier += 0.10;
+        }
+      }
+
+      strengths[k.job] += multiplier;
+    }
+  });
+
+  return strengths;
+}
 
 const initialLogs: GameLogMessage[] = [
   {
@@ -179,6 +219,9 @@ export const useGameStore = create<GameState>()(
       logs: initialLogs,
       theme: 'dark',
       buyMultiplier: 1,
+      insaneMode: true,
+      density: 'relaxed',
+      activeAnomaly: null,
 
       addLog: (text: string, type: GameLogMessage['type'] = 'info') => {
         const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -207,7 +250,7 @@ export const useGameStore = create<GameState>()(
             ? (state.village.kittens as number) 
             : 0;
             
-          const maxKittens = (state.buildings?.hut * 2) + (state.buildings?.logHouse * 1) || 0;
+          const maxKittens = (state.buildings?.hut * 2) + (state.buildings?.logHouse * 1) + (state.buildings?.mansion * 4) || 0;
           const healedKittens: Kitten[] = [];
           
           // Limit to physical capacity
@@ -252,7 +295,90 @@ export const useGameStore = create<GameState>()(
         const totalBoost = updatedActive.reduce((acc, cert) => acc + cert.boostPercent, 0);
         const certificateMultiplier = 1 + totalBoost;
         const portalFluxMultiplier = 1 + (state.portalFlux * 0.1);
-        const productionMultiplier = certificateMultiplier * portalFluxMultiplier;
+        let productionMultiplier = certificateMultiplier * portalFluxMultiplier;
+
+        // Anomaly tracking and processing
+        let activeAnomaly = state.activeAnomaly ? { ...state.activeAnomaly } : null;
+        let customCatnipDrain = 0;
+        let customWoodDrain = 0;
+        let customCultureDrain = 0;
+        let microverseDecayActive = false;
+        let federationRaidActive = false;
+        let applyExplosionPenalty: string | null = null;
+
+        if (activeAnomaly) {
+          activeAnomaly.durationLeft -= effectiveDelta;
+          
+          if (activeAnomaly.durationLeft <= 0) {
+            applyExplosionPenalty = activeAnomaly.type;
+            let logMsg = '';
+            
+            if (applyExplosionPenalty === 'fluid_leak') {
+              logMsg = '🚨 CRITICAL FAULT: Portal fluid rupture flooded the crops! 40% of Mega Seed and 20% of Plutonium reserves dissolved in sub-space acid!';
+            } else if (applyExplosionPenalty === 'fed_raid') {
+              logMsg = '🚨 CITADEL RAID: Galactic Federation hit squads breached the Clone Bay! Snatched 50% of your Crystals/Neutrium and captured 1 Morty!';
+            } else if (applyExplosionPenalty === 'cromulon') {
+              logMsg = '🚨 CROMULON REJECTION: The Giant Cosmic Head yelled DISQUALIFIED! Vibe down 50% and local morale is devastated.';
+            } else if (applyExplosionPenalty === 'microverse_decay') {
+              logMsg = '🚨 MICROVERSE COLLAPSE: A pocket reality collapsed, scattering 30% of stored raw materials into outer voids!';
+            }
+            
+            state.addLog(logMsg, 'death');
+            activeAnomaly = null;
+          } else {
+            if (activeAnomaly.type === 'fluid_leak') {
+              customCatnipDrain = 8.0;
+              customWoodDrain = 1.2;
+            } else if (activeAnomaly.type === 'cromulon') {
+              customCultureDrain = 4.0;
+            } else if (activeAnomaly.type === 'microverse_decay') {
+              microverseDecayActive = true;
+            } else if (activeAnomaly.type === 'fed_raid') {
+              federationRaidActive = true;
+            }
+          }
+        } else if (state.insaneMode) {
+          // Dimensional Anomalies occur only later once Laser Fault-Drilling (mining) is researched, the clone base size is >= 6, and at a much lower rate (over 13x lower probability)
+          if (state.researched.mining && state.village.kittens.length >= 6 && Math.random() < 0.0006 * effectiveDelta) {
+            const types = ['fluid_leak', 'fed_raid', 'cromulon', 'microverse_decay'] as const;
+            const chosenType = types[Math.floor(Math.random() * types.length)];
+            
+            let name = '';
+            let desc = '';
+            if (chosenType === 'fluid_leak') {
+              name = 'Portal Acid Geyser';
+              desc = 'Toxic fluid leaking. Drains Mega Seeds and Plutonium passively. Resolve before detritus floods!';
+            } else if (chosenType === 'fed_raid') {
+              name = 'Galactic Fed Patrol';
+              desc = 'Interdimensional spies sniffing. Reduces general production by 50%. Resolve or they storm the gates!';
+            } else if (chosenType === 'cromulon') {
+              name = 'Displeased Cosmic Cromulon';
+              desc = 'Giant cosmic head demands song. Steals Schwifty Vibes. Resolve or happiness crashes!';
+            } else if (chosenType === 'microverse_decay') {
+              name = 'Microverse Pocket Compression';
+              desc = 'Reality bounds shrinking. Halves all storage facilities. Resolve or elements collapse!';
+            }
+
+            activeAnomaly = {
+              id: Math.random().toString(),
+              type: chosenType,
+              name,
+              desc,
+              durationLeft: 20,
+              clicksRequired: 10,
+              clicksMade: 0
+            };
+            
+            state.addLog(`🚨 WARNING: Dimensional Anomaly [${name}] detected! Resolve in the Portal Stabilizer immediately!`, 'warn');
+          }
+        }
+
+        if (state.insaneMode) {
+          productionMultiplier *= 0.65;
+        }
+        if (federationRaidActive) {
+          productionMultiplier *= 0.50;
+        }
 
         // 1. Storage upgrade ratios
         const barnMultiplier = state.upgrades.reinforcedBarns ? 1.4 : 1.0;
@@ -262,13 +388,21 @@ export const useGameStore = create<GameState>()(
         let maxCatnip = 2000 + (state.buildings.pasture * 500) + (state.buildings.barn * 2500 * barnMultiplier);
         if (state.upgrades.catnipSilos) maxCatnip *= 1.5;
 
-        const maxWood = 200 + (state.buildings.barn * 200 * barnMultiplier) + (state.buildings.warehouse * 150 * warehouseMultiplier);
-        const maxMinerals = (state.buildings.barn * 250 * barnMultiplier) + (state.buildings.warehouse * 500 * warehouseMultiplier);
-        const maxIron = (state.buildings.barn * 50 * barnMultiplier) + (state.buildings.warehouse * 150 * warehouseMultiplier);
-        const maxScience = (state.buildings.library * 250) + (state.buildings.academy * 1000) + (state.buildings.warehouse * 100 * warehouseMultiplier);
+        let maxWood = 200 + (state.buildings.barn * 200 * barnMultiplier) + (state.buildings.warehouse * 150 * warehouseMultiplier);
+        let maxMinerals = (state.buildings.barn * 250 * barnMultiplier) + (state.buildings.warehouse * 500 * warehouseMultiplier);
+        let maxIron = (state.buildings.barn * 50 * barnMultiplier) + (state.buildings.warehouse * 150 * warehouseMultiplier);
+        let maxScience = (state.buildings.library * 250) + (state.buildings.academy * 1000) + (state.buildings.warehouse * 100 * warehouseMultiplier);
+
+        if (microverseDecayActive) {
+          maxCatnip *= 0.5;
+          maxWood *= 0.5;
+          maxMinerals *= 0.5;
+          maxIron *= 0.5;
+          maxScience *= 0.5;
+        }
         
         // Max housing space
-        const maxKittens = (state.buildings.hut * 2) + (state.buildings.logHouse * 1);
+        const maxKittens = (state.buildings.hut * 2) + (state.buildings.logHouse * 1) + (state.buildings.mansion * 4);
 
         // 2. Season Progression (2 seconds of tick time = 1 Day!)
         let currentSeason = state.season.current;
@@ -289,16 +423,23 @@ export const useGameStore = create<GameState>()(
         // 3. Happiness Calculations
         // Base is 100%. If population > 5, each extra kitten causes -2% crowding stress.
         // Amphitheatres reduce stress or boost happiness directly by +4% each.
+        // Dimension travelers boost happiness by +5% each.
         const kittenCount = state.village.kittens.length;
         let crowdingPenalty = 0;
         if (kittenCount > 5) {
           crowdingPenalty = (kittenCount - 5) * 2;
         }
+        let travelerHappinessBoost = 0;
+        state.village.kittens.forEach(k => {
+          if (k.trait && k.trait.includes('Dimension traveler')) {
+            travelerHappinessBoost += 5;
+          }
+        });
         const amphitheatreBoost = state.buildings.amphitheatre * 4;
-        let finalHappiness = Math.min(150, Math.max(10, 100 - crowdingPenalty + amphitheatreBoost));
+        let finalHappiness = Math.min(150, Math.max(10, 100 - crowdingPenalty + amphitheatreBoost + travelerHappinessBoost));
 
         // 4. Job Production rates per second
-        // Check kitten count in each job
+        // Check kitten count in each job and calculate level plus trait adjusted job strengths
         const jobCounts: Record<JobType, number> = {
           farmer: 0,
           woodcutter: 0,
@@ -311,22 +452,42 @@ export const useGameStore = create<GameState>()(
             jobCounts[k.job]++;
           }
         });
+        const jobStrengths = calculateJobStrengths(state.village.kittens);
 
         // FARMING: boost from agriculture, season modifier, and aqueduct multiplier
         const farmerEffBonus = state.researched.agriculture ? 1.20 : 1.0;
-        const seasonModifier = state.researched.calendar ? SEASONS_DATA[currentSeason].catnipModifier : 1.0;
+        const agricultureGreenhouseBonus = state.researched.agriculture ? 1.25 : 1.0;
+        let seasonModifier = state.researched.calendar ? SEASONS_DATA[currentSeason].catnipModifier : 1.0;
+        
+        if (state.insaneMode && currentSeason === 'Winter') {
+          seasonModifier = state.upgrades.portalHeaters ? 0.35 : 0.05;
+        } else if (state.upgrades.portalHeaters && currentSeason === 'Winter') {
+          seasonModifier = Math.max(seasonModifier, 0.55);
+        }
+        
         const aqueductBoost = 1 + (state.buildings.aqueduct * 0.15); // +15% passive production per aqueduct
 
         // Base field production is passive
-        const fieldsPassiveRate = state.buildings.catnipField * 0.63 * seasonModifier * aqueductBoost;
-        const farmerRate = jobCounts.farmer * 5.0 * farmerEffBonus * seasonModifier * productionMultiplier;
+        const fieldsPassiveRate = state.buildings.catnipField * 0.63 * seasonModifier * aqueductBoost * agricultureGreenhouseBonus;
+        const farmerRate = jobStrengths.farmer * 5.0 * farmerEffBonus * seasonModifier * productionMultiplier;
         let catnipRate = fieldsPassiveRate + farmerRate;
 
-        // KITTEN STARVATION: Each kitten consumes 4.25 catnip / sec
+        // KITTEN STARVATION: Each kitten consumes more under strain (hard mode)
         // Pasture reduces food intake by 1.5% each, up to 50% max reduction
         const pastureIntakeReduction = Math.max(0.50, 1 - (state.buildings.pasture * 0.015));
-        const kittenEatsRate = kittenCount * 4.25 * pastureIntakeReduction;
+        const baseFoodDemandPerMorty = state.insaneMode ? 5.50 : 4.25;
+        let totalFoodDemand = 0;
+        state.village.kittens.forEach(k => {
+          let multiplier = 1.0;
+          if (k.trait && k.trait.includes('Mega-Seed Tolerant')) {
+            multiplier = 0.95;
+          }
+          totalFoodDemand += baseFoodDemandPerMorty * multiplier;
+        });
+        const kittenEatsRate = totalFoodDemand * pastureIntakeReduction;
+        
         catnipRate -= kittenEatsRate;
+        catnipRate -= customCatnipDrain; // Anomaly drain
 
         // Starving condition
         let catnipAmt = state.resources.catnip.amount + (catnipRate * effectiveDelta);
@@ -340,29 +501,38 @@ export const useGameStore = create<GameState>()(
         // Efficiency modifier from happiness
         const efficiencyFactor = finalHappiness / 100;
 
-        // WOODCUTTER
+        // WOODCUTTER (Plutonium Scrapper) boosted by woodworking research
         let axeMultiplier = 1.0;
         if (state.upgrades.ironAxes) axeMultiplier = 1.75;
         else if (state.upgrades.mineralAxes) axeMultiplier = 1.25;
 
-        const woodcutterBase = jobCounts.woodcutter * 0.10 * axeMultiplier * efficiencyFactor * productionMultiplier;
+        const woodworkingWoodcutterBonus = state.researched.woodworking ? 1.15 : 1.0;
+        const woodcutterBase = jobStrengths.woodcutter * 0.10 * axeMultiplier * efficiencyFactor * productionMultiplier * woodworkingWoodcutterBonus;
         let woodRate = woodcutterBase;
 
-        // SCHOLAR
+        // SCHOLAR boosted by writing (Interdimensional Cable) research
         // Libraries & academies boost scholars
         const academyScholarMod = 1 + (state.buildings.academy * 0.20);
-        let scienceRate = jobCounts.scholar * 0.25 * academyScholarMod * efficiencyFactor * productionMultiplier;
+        const writingScholarBonus = state.researched.writing ? 1.25 : 1.0;
+        let scienceRate = jobStrengths.scholar * 0.25 * academyScholarMod * efficiencyFactor * productionMultiplier * writingScholarBonus;
 
-        // MINER
-        const minerBase = jobCounts.miner * 0.18 * efficiencyFactor * productionMultiplier;
+        // MINER boosted by mining (Laser Fault-Drilling) research
+        const miningMinerBonus = state.researched.mining ? 1.20 : 1.0;
+        const minerBase = jobStrengths.miner * 0.18 * efficiencyFactor * productionMultiplier * miningMinerBonus;
         // Mine adds slightly passive mineral gain as well
-        let mineralsRate = minerBase + (state.buildings.mine * 0.05);
+        let mineralsRate = minerBase + (state.buildings.mine * 0.05 * miningMinerBonus);
 
-        // PRIEST
-        let cultureRate = jobCounts.priest * 0.15 * efficiencyFactor * productionMultiplier;
+        // PRIEST (Schwifty Musician) boosted by theology (Cromulon Reverence) research
+        const theologyPriestBonus = state.researched.theology ? 1.40 : 1.0;
+        let cultureRate = jobStrengths.priest * 0.15 * efficiencyFactor * productionMultiplier * theologyPriestBonus;
 
-        // SMELTER PASSIVES
+        // Apply passive anomaly drains
+        woodRate -= customWoodDrain;
+        cultureRate -= customCultureDrain;
+
+        // SMELTER PASSIVES (boosted by metalworking research)
         // Consumes 1.0 Wood and 10 Minerals to smelt +0.15 Iron per smelter
+        const metalworkingSmelterBonus = state.researched.metalworking ? 1.30 : 1.0;
         let ironRate = 0;
         if (state.buildings.smelter > 0) {
           const count = state.buildings.smelter;
@@ -373,7 +543,7 @@ export const useGameStore = create<GameState>()(
             // Apply consumption
             woodRate -= count * 1.0;
             mineralsRate -= count * 10.0;
-            ironRate += count * 0.18;
+            ironRate += count * 0.18 * metalworkingSmelterBonus * productionMultiplier; // SMELTER affects output with active boosters as well
           }
         }
 
@@ -384,13 +554,40 @@ export const useGameStore = create<GameState>()(
         let ironAmt = state.resources.iron.amount + (ironRate * effectiveDelta);
         let cultureAmt = state.resources.culture.amount + (cultureRate * effectiveDelta);
 
+        // Apply instant disaster explosion impacts (if they go unresolved)
+        const updatedKittens = [...state.village.kittens];
+        if (applyExplosionPenalty) {
+          if (applyExplosionPenalty === 'fluid_leak') {
+            catnipAmt *= 0.60;
+            woodAmt *= 0.80;
+          } else if (applyExplosionPenalty === 'fed_raid') {
+            mineralsAmt *= 0.50;
+            ironAmt *= 0.50;
+            if (updatedKittens.length > 0) {
+              const deceased = updatedKittens.pop();
+              if (deceased) {
+                state.addLog(`💀 DISASTER RAID: Galactic Federation spies captured and liquidated ${deceased.name} ${deceased.surname} in transit!`, 'death');
+              }
+            }
+          } else if (applyExplosionPenalty === 'cromulon') {
+            cultureAmt *= 0.50;
+            finalHappiness = Math.max(10, finalHappiness - 50);
+          } else if (applyExplosionPenalty === 'microverse_decay') {
+            catnipAmt *= 0.70;
+            woodAmt *= 0.70;
+            mineralsAmt *= 0.70;
+            ironAmt *= 0.70;
+            scienceAmt *= 0.70;
+          }
+        }
+
         // Clamping amounts to max
         catnipAmt = Math.min(catnipAmt, maxCatnip);
         woodAmt = Math.min(woodAmt, maxWood);
         mineralsAmt = Math.min(mineralsAmt, maxMinerals);
         ironAmt = Math.min(ironAmt, maxIron);
         scienceAmt = Math.min(scienceAmt, maxScience);
-        // Culture does not have a hard ceiling in standard kittens, let's cap at 100000
+        // Culture does not have a hard ceiling in standard kittens, let's cap at 10000 set in state
         cultureAmt = Math.min(cultureAmt, 100000);
 
         // Ensure positive bottom values
@@ -417,12 +614,12 @@ export const useGameStore = create<GameState>()(
         }
 
         //6. Kitten Survival & Recruitment
-        const updatedKittens = [...state.village.kittens];
         
         // Starvation logic checks
         // If hunger and kittens exist, there is a small risk they run away or die! (e.g. 1.2% chance per active starving tick)
         if (hungerState && updatedKittens.length > 0) {
-          const starvationRisk = 0.05 * effectiveDelta;
+          const baseRisk = state.insaneMode ? 0.15 : 0.05;
+          const starvationRisk = baseRisk * effectiveDelta;
           if (Math.random() < starvationRisk) {
             const deceased = updatedKittens.pop();
             if (deceased) {
@@ -473,7 +670,7 @@ export const useGameStore = create<GameState>()(
             minerals: { amount: mineralsAmt, max: maxMinerals },
             iron: { amount: ironAmt, max: maxIron },
             science: { amount: scienceAmt, max: maxScience },
-            culture: { amount: cultureAmt, max: 10000 },
+            culture: { amount: cultureAmt, max: 100000 },
             parchment: { amount: state.resources.parchment.amount, max: 5000 },
             beam: { amount: state.resources.beam.amount, max: 5000 },
             slab: { amount: state.resources.slab.amount, max: 5000 },
@@ -526,7 +723,7 @@ export const useGameStore = create<GameState>()(
             minerals: { amount: mineralsAmt, max: maxMinerals },
             iron: { amount: ironAmt, max: maxIron },
             science: { amount: scienceAmt, max: maxScience },
-            culture: { amount: cultureAmt, max: 10000 },
+            culture: { amount: cultureAmt, max: 100000 },
             // Crafted materials can hold up to 10M
             parchment: { amount: state.resources.parchment.amount, max: 5000 },
             beam: { amount: state.resources.beam.amount, max: 5000 },
@@ -538,7 +735,8 @@ export const useGameStore = create<GameState>()(
             maxKittens,
             happiness: finalHappiness
           },
-          unlocks
+          unlocks,
+          activeAnomaly
         });
       },
 
@@ -613,6 +811,11 @@ export const useGameStore = create<GameState>()(
         const bDef = BUILDINGS[type];
         const owned = state.buildings[type];
         
+        if (bDef.maxLimit !== undefined && owned + quantity > bDef.maxLimit) {
+          state.addLog(`Access Denied! Capacity reached for ${bDef.name} (${owned}/${bDef.maxLimit}).`, 'warn');
+          return state;
+        }
+        
         let canAfford = true;
         const res = JSON.parse(JSON.stringify(state.resources)) as GameState['resources'];
         
@@ -661,11 +864,53 @@ export const useGameStore = create<GameState>()(
           return k;
         });
         
+        const unlocks = { ...state.unlocks };
+        kittens.forEach(k => {
+          if (k.job === 'woodcutter') unlocks.wood = true;
+          if (k.job === 'miner') unlocks.minerals = true;
+          if (k.job === 'scholar') {
+            unlocks.science = true;
+            unlocks.workshop = true;
+          }
+          if (k.job === 'priest') unlocks.culture = true;
+        });
+
         return {
           village: {
             ...state.village,
             kittens
+          },
+          unlocks
+        };
+      }),
+
+      assignJobsMultiple: (kittenIds, job) => set(state => {
+        const kittensList = Array.isArray(state.village?.kittens) ? state.village.kittens : [];
+        const idSet = new Set(kittenIds);
+        const kittens = kittensList.map(k => {
+          if (idSet.has(k.id)) {
+            return { ...k, job };
           }
+          return k;
+        });
+        
+        const unlocks = { ...state.unlocks };
+        kittens.forEach(k => {
+          if (k.job === 'woodcutter') unlocks.wood = true;
+          if (k.job === 'miner') unlocks.minerals = true;
+          if (k.job === 'scholar') {
+            unlocks.science = true;
+            unlocks.workshop = true;
+          }
+          if (k.job === 'priest') unlocks.culture = true;
+        });
+
+        return {
+          village: {
+            ...state.village,
+            kittens
+          },
+          unlocks
         };
       }),
 
@@ -677,11 +922,24 @@ export const useGameStore = create<GameState>()(
           }
           return k;
         });
+
+        const unlocks = { ...state.unlocks };
+        kittens.forEach(k => {
+          if (k.job === 'woodcutter') unlocks.wood = true;
+          if (k.job === 'miner') unlocks.minerals = true;
+          if (k.job === 'scholar') {
+            unlocks.science = true;
+            unlocks.workshop = true;
+          }
+          if (k.job === 'priest') unlocks.culture = true;
+        });
+
         return {
           village: {
             ...state.village,
             kittens
-          }
+          },
+          unlocks
         };
       }),
 
@@ -764,7 +1022,7 @@ export const useGameStore = create<GameState>()(
 
       forceAddKitten: () => set(state => {
          // cheat / manual recruiter
-         const maxKittens = (state.buildings.hut * 2) + (state.buildings.logHouse * 1);
+         const maxKittens = (state.buildings.hut * 2) + (state.buildings.logHouse * 1) + (state.buildings.mansion * 4);
          const kittensList = Array.isArray(state.village?.kittens) ? state.village.kittens : [];
          if (kittensList.length < maxKittens) {
             const extra = generateRandomKitten();
@@ -890,7 +1148,49 @@ export const useGameStore = create<GameState>()(
         });
 
         state.addLog(`Portal synthesizer online! Synthesised ${def.name}. Productivity boost activated!`, 'success');
-      }
+      },
+
+      toggleInsaneMode: () => set(state => {
+        const nextInsane = !state.insaneMode;
+        const msg = nextInsane 
+          ? "🔴 Insane Multiverse Matrix ACTIVATED. Global production is penalized by 35%. Winter is lethal. Dangerous Dimensional Anomalies will strike!" 
+          : "🟢 Insane Multiverse Matrix deactivated. Returning to safe, cushy dimensions.";
+        state.addLog(msg, nextInsane ? 'warn' : 'info');
+        return { 
+          insaneMode: nextInsane,
+          activeAnomaly: null
+        };
+      }),
+
+      defuseAnomalyClick: () => set(state => {
+        if (!state.activeAnomaly) return state;
+        const current = { ...state.activeAnomaly };
+        current.clicksMade += 1;
+        if (current.clicksMade >= current.clicksRequired) {
+          state.addLog(`🛡️ Matrix Stabilized! Manual core dampening neutralized: ${current.name}.`, 'success');
+          return { activeAnomaly: null };
+        }
+        return { activeAnomaly: current };
+      }),
+
+      defuseAnomalyInstant: () => set(state => {
+        if (!state.activeAnomaly) return state;
+        const name = state.activeAnomaly.name;
+        if (state.resources.wood.amount >= 40) {
+          const res = { ...state.resources };
+          res.wood.amount -= 40;
+          state.addLog(`🛡️ Stabilizer Shield Deployed! Spent 40 Plutonium fuel to instantly dissolve: ${name}.`, 'success');
+          return {
+            resources: res,
+            activeAnomaly: null
+          };
+        } else {
+          state.addLog(`Access Denied! Core shields require at least 40 Plutonium fuel.`, 'warn');
+          return state;
+        }
+      }),
+
+      setDensity: (density: 'compact' | 'relaxed') => set({ density })
     }),
     {
       name: 'rick-and-morty-incremental-storage',
@@ -962,7 +1262,7 @@ export const useGameStore = create<GameState>()(
         // Merge town & kitten colony
         let mergedVillage = { ...currentState.village };
         if (persistedState.village) {
-          const maxKittens = (mergedBuildings.hut * 2) + (mergedBuildings.logHouse * 1);
+          const maxKittens = (mergedBuildings.hut * 2) + (mergedBuildings.logHouse * 1) + (mergedBuildings.mansion * 4);
           const kitList = Array.isArray(persistedState.village.kittens) ? persistedState.village.kittens : [];
           
           mergedVillage = {
@@ -991,6 +1291,7 @@ export const useGameStore = create<GameState>()(
           craftedCertificatesCount: mergedCraftedCertificatesCount,
           achievements: mergedAchievements,
           theme: persistedState.theme === 'light' ? 'light' : 'dark',
+          density: (persistedState.density === 'compact' || persistedState.density === 'relaxed') ? persistedState.density : 'relaxed',
           buyMultiplier: (persistedState.buyMultiplier === 1 || persistedState.buyMultiplier === 5 || persistedState.buyMultiplier === 25) 
             ? persistedState.buyMultiplier 
             : 1,

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useGameStore } from './store/useGameStore';
+import { useGameStore, calculateJobStrengths } from './store/useGameStore';
 import { BUILDINGS, JOBS, SEASONS_DATA } from './gameData';
 import { 
   Flame, 
@@ -23,7 +23,10 @@ import {
   Sliders,
   ChevronsLeft,
   ChevronsRight,
-  Trash2
+  Trash2,
+  ShieldAlert,
+  Hand,
+  Zap
 } from 'lucide-react';
 
 import ResourcePanel from './components/ResourcePanel';
@@ -122,24 +125,55 @@ export default function App() {
     }
   });
 
+  const jobStrengths = calculateJobStrengths(kittensList);
+
   const barnMultiplier = store.upgrades.reinforcedBarns ? 1.4 : 1.0;
   const warehouseMultiplier = store.upgrades.expandedStorage ? 1.35 : 1.0;
 
   let maxCatnip = 2000 + (store.buildings.pasture * 500) + (store.buildings.barn * 2500 * barnMultiplier);
   if (store.upgrades.catnipSilos) maxCatnip *= 1.5;
 
+  const totalBoost = (store.activeCertificates || []).reduce((acc, cert) => acc + cert.boostPercent, 0);
+  const certificateMultiplier = 1 + totalBoost;
+  const portalFluxMultiplier = 1 + (store.portalFlux * 0.1);
+  let productionMultiplier = certificateMultiplier * portalFluxMultiplier;
+
+  if (store.insaneMode) {
+    productionMultiplier *= 0.65;
+  }
+  if (store.activeAnomaly?.type === 'fed_raid') {
+    productionMultiplier *= 0.50;
+  }
+
   // Rates formulas mirror store tick perfectly for pixel-perfect UI synchronization
   const farmerEffBonus = store.researched.agriculture ? 1.20 : 1.0;
-  const seasonModifier = store.researched.calendar ? SEASONS_DATA[store.season.current].catnipModifier : 1.0;
+  const agricultureGreenhouseBonus = store.researched.agriculture ? 1.25 : 1.0;
+  let seasonModifier = store.researched.calendar ? SEASONS_DATA[store.season.current].catnipModifier : 1.0;
+  
+  if (store.insaneMode && store.season.current === 'Winter') {
+    seasonModifier = store.upgrades.portalHeaters ? 0.35 : 0.05;
+  } else if (store.upgrades.portalHeaters && store.season.current === 'Winter') {
+    seasonModifier = Math.max(seasonModifier, 0.55);
+  }
+  
   const aqueductBoost = 1 + (store.buildings.aqueduct * 0.15);
 
-  const fieldsPassiveRate = store.buildings.catnipField * 0.63 * seasonModifier * aqueductBoost;
-  const farmerRateValue = jobCounts.farmer * 5.0 * farmerEffBonus * seasonModifier;
+  const fieldsPassiveRate = store.buildings.catnipField * 0.63 * seasonModifier * aqueductBoost * agricultureGreenhouseBonus;
+  const farmerRateValue = jobStrengths.farmer * 5.0 * farmerEffBonus * seasonModifier * productionMultiplier;
   
   const pastureIntakeReduction = Math.max(0.50, 1 - (store.buildings.pasture * 0.015));
-  const kittenEatsRate = kittenCount * 4.25 * pastureIntakeReduction;
+  const baseFoodDemandPerMorty = store.insaneMode ? 5.50 : 4.25;
+  let totalFoodDemand = 0;
+  kittensList.forEach(k => {
+    let multiplier = 1.0;
+    if (k.trait && k.trait.includes('Mega-Seed Tolerant')) {
+      multiplier = 0.95;
+    }
+    totalFoodDemand += baseFoodDemandPerMorty * multiplier;
+  });
+  const kittenEatsRate = totalFoodDemand * pastureIntakeReduction;
   
-  const computedCatnipRate = fieldsPassiveRate + farmerRateValue - kittenEatsRate;
+  let computedCatnipRate = fieldsPassiveRate + farmerRateValue - kittenEatsRate;
 
   let axeMultiplier = 1.0;
   if (store.upgrades.ironAxes) axeMultiplier = 1.75;
@@ -147,23 +181,40 @@ export default function App() {
 
   const efficiencyFactor = store.village.happiness / 100;
   
-  let computedWoodRate = jobCounts.woodcutter * 0.10 * axeMultiplier * efficiencyFactor;
-  let computedMineralsRate = (jobCounts.miner * 0.18 * efficiencyFactor) + (store.buildings.mine * 0.05);
+  const woodworkingWoodcutterBonus = store.researched.woodworking ? 1.15 : 1.0;
+  let computedWoodRate = jobStrengths.woodcutter * 0.10 * axeMultiplier * efficiencyFactor * productionMultiplier * woodworkingWoodcutterBonus;
+
+  const miningMinerBonus = store.researched.mining ? 1.20 : 1.0;
+  let computedMineralsRate = (jobStrengths.miner * 0.18 * efficiencyFactor * productionMultiplier * miningMinerBonus) + (store.buildings.mine * 0.05 * miningMinerBonus);
   let computedIronRate = 0;
 
+  const metalworkingSmelterBonus = store.researched.metalworking ? 1.30 : 1.0;
   if (store.buildings.smelter > 0) {
     const smeltersCount = store.buildings.smelter;
     // Smelters consume raw mats to output iron
     if ((store.resources.wood?.amount ?? 0) > 1 && (store.resources.minerals?.amount ?? 0) > 10) {
       computedWoodRate -= smeltersCount * 1.0;
       computedMineralsRate -= smeltersCount * 10.0;
-      computedIronRate += smeltersCount * 0.18;
+      computedIronRate += smeltersCount * 0.18 * metalworkingSmelterBonus * productionMultiplier;
     }
   }
 
+  // Deduct active drains from the rendering HUD rates
+  if (store.activeAnomaly?.type === 'fluid_leak') {
+    computedCatnipRate -= 8.0;
+    computedWoodRate -= 1.2;
+  }
+
   const academyScholarMod = 1 + (store.buildings.academy * 0.20);
-  const computedScienceRate = jobCounts.scholar * 0.25 * academyScholarMod * efficiencyFactor;
-  const computedCultureRate = jobCounts.priest * 0.15 * efficiencyFactor;
+  const writingScholarBonus = store.researched.writing ? 1.25 : 1.0;
+  const computedScienceRate = jobStrengths.scholar * 0.25 * academyScholarMod * efficiencyFactor * productionMultiplier * writingScholarBonus;
+
+  const theologyPriestBonus = store.researched.theology ? 1.40 : 1.0;
+  let computedCultureRate = jobStrengths.priest * 0.15 * efficiencyFactor * productionMultiplier * theologyPriestBonus;
+
+  if (store.activeAnomaly?.type === 'cromulon') {
+    computedCultureRate -= 4.0;
+  }
 
   const handleTabChange = (tab: ActiveTabType) => {
     setActiveTab(tab);
@@ -376,9 +427,15 @@ export default function App() {
       <main className="flex-1 flex flex-col h-full relative overflow-hidden">
         
         {/* SUPER MINIMAL TOP BAR */}
-        <header className="w-full shrink-0 pt-8 sm:pt-10 px-5 sm:px-10 flex flex-col gap-6 z-20 relative">
+        <header className={`w-full shrink-0 transition-all duration-300 z-20 relative flex flex-col ${
+          store.density === 'compact' 
+            ? 'pt-3 sm:pt-4 px-4 sm:px-6 gap-2.5' 
+            : 'pt-8 sm:pt-10 px-5 sm:px-10 gap-6'
+        }`}>
           <div className="flex justify-between items-end relative">
-             <h1 className="text-5xl sm:text-7xl font-black tracking-[-0.04em] opacity-5 theme-text-main uppercase leading-none select-none absolute -top-4 -left-2 pointer-events-none origin-left transform-gpu mix-blend-overlay">
+             <h1 className={`font-black tracking-[-0.04em] opacity-5 theme-text-main uppercase leading-none select-none absolute -top-4 -left-2 pointer-events-none origin-left transform-gpu mix-blend-overlay transition-all duration-300 ${
+               store.density === 'compact' ? 'text-3xl sm:text-4xl' : 'text-5xl sm:text-7xl'
+             }`}>
                {activeTab === 'bonfire' ? 'Citadel' : activeTab === 'town' ? 'Clone Bay' : activeTab === 'science' ? 'Labs' : activeTab === 'workshop' ? 'Refinery' : 'Badges'}
              </h1>
              
@@ -410,7 +467,7 @@ export default function App() {
           </div>
 
           {/* FLOATING TOP RESOURCES HUD */}
-          <div className="z-20 w-full animate-fade-in relative mt-2 mb-4">
+          <div className="z-20 w-full animate-fade-in relative mt-2 mb-2">
              <ResourcePanel
                 store={store}
                 catnipRate={computedCatnipRate}
@@ -421,10 +478,71 @@ export default function App() {
                 ironRate={computedIronRate}
               />
           </div>
+
+          {/* ANOMALY ALERT SYSTEM */}
+          {store.activeAnomaly && (
+            <div className="z-20 w-full animate-bounce theme-bg-card border-2 border-red-500/80 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-[0_0_20px_rgba(239,68,68,0.25)] backdrop-blur-md mb-2 relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-[3px] bg-red-950/30">
+                <div 
+                  className="h-full bg-gradient-to-r from-red-600 via-yellow-400 to-red-600 transition-all duration-300"
+                  style={{ width: `${(store.activeAnomaly.durationLeft / 20) * 100}%` }}
+                />
+              </div>
+              
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-red-950/40 border border-red-500/30 rounded-xl text-red-500 shrink-0 select-none animate-pulse">
+                  <ShieldAlert size={26} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black uppercase text-red-500 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-full tracking-widest leading-none">
+                      Warning: Dimensional Anomaly
+                    </span>
+                    <span className="text-xs font-mono font-bold text-red-400">
+                      {Math.ceil(store.activeAnomaly.durationLeft)}s Left
+                    </span>
+                  </div>
+                  <h4 className="text-lg font-black text-white uppercase tracking-tight mt-1 flex items-center gap-1.5">
+                    {store.activeAnomaly.name}
+                  </h4>
+                  <p className="text-neutral-400 text-xs font-medium max-w-sm mt-0.5">
+                    {store.activeAnomaly.desc}
+                  </p>
+                </div>
+              </div>
+
+              {/* ACTION AREA */}
+              <div className="flex flex-row gap-2 w-full sm:w-auto shrink-0">
+                <button
+                  onClick={() => {
+                    store.defuseAnomalyClick();
+                    if (store.soundEnabled) playClickSound('click');
+                  }}
+                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-gradient-to-b from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 text-white font-black text-xs uppercase tracking-wider px-4 py-3 rounded-xl shadow-lg border border-red-400 transition-all cursor-pointer group"
+                >
+                  <Hand size={14} className="group-hover:scale-125 transition-transform" />
+                  Stabilize ({store.activeAnomaly.clicksMade}/{store.activeAnomaly.clicksRequired})
+                </button>
+                <button
+                  onClick={() => {
+                    store.defuseAnomalyInstant();
+                    if (store.soundEnabled) playClickSound('success');
+                  }}
+                  disabled={(store.resources.wood?.amount ?? 0) < 40}
+                  className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-40 disabled:hover:bg-neutral-900 border border-neutral-700 hover:border-neutral-500 text-white text-xs font-black uppercase tracking-wider px-4 py-3 rounded-xl transition-all cursor-pointer"
+                >
+                  <Zap size={14} className="text-yellow-400" />
+                  Direct Shield (40 Plutonium)
+                </button>
+              </div>
+            </div>
+          )}
         </header>
 
         {/* ACTIVE TAB CONTENT WINDOW */}
-        <div className="flex-1 overflow-x-hidden overflow-y-auto px-5 sm:px-10 pb-32 md:pb-12 pt-2 relative z-10 scrollbar-none">
+        <div className={`flex-1 overflow-x-hidden overflow-y-auto pb-32 md:pb-12 pt-1.5 relative z-10 scrollbar-none transition-all duration-300 ${
+          store.density === 'compact' ? 'px-4 sm:px-6' : 'px-5 sm:px-10'
+        }`}>
           {currentTabComponent()}
         </div>
 

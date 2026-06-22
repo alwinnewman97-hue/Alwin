@@ -1,7 +1,7 @@
 import React from 'react';
 import { GameState, ScienceType, ResourceType } from '../types';
 import { SCIENCES } from '../gameData';
-import { playClickSound } from '../utils/audio';
+import { playClickSound, triggerHaptic } from '../utils/audio';
 import { FlaskConical, Check, Sparkles, BookOpen, GraduationCap, Compass, Microscope } from 'lucide-react';
 
 interface ScienceTabProps {
@@ -9,9 +9,11 @@ interface ScienceTabProps {
 }
 
 export default function ScienceTab({ store }: ScienceTabProps) {
+  const isCompact = store.density === 'compact';
 
   const handleResearch = (type: ScienceType) => {
     store.researchScience(type);
+    triggerHaptic('research');
     if (store.soundEnabled) playClickSound('research');
   };
 
@@ -46,20 +48,30 @@ export default function ScienceTab({ store }: ScienceTabProps) {
     <div className="flex flex-col flex-1 pb-10">
       
       {/* SCIENCE POOL OVERVIEW */}
-      <div className="flex justify-between items-center pb-6 border-b border-white/5 mx-2 sm:mx-6 mt-4">
+      <div className={`flex justify-between items-center border-b border-white/5 transition-all duration-300 ${
+        isCompact ? 'pb-3 mx-2 mt-2 gap-2 text-xs' : 'pb-6 mx-2 sm:mx-6 mt-4'
+      }`}>
         <div className="flex flex-col gap-1">
-          <span className="text-[10px] uppercase font-bold text-neutral-500 tracking-widest leading-none">Scientific Registry</span>
-          <h3 className="text-lg font-bold text-white tracking-wide">Dimensional Breakthroughs</h3>
+          <span className={`uppercase font-bold text-neutral-500 tracking-widest leading-none ${
+            isCompact ? 'text-[9px]' : 'text-[10px]'
+          }`}>Scientific Registry</span>
+          <h3 className={`font-bold text-white tracking-wide transition-all ${
+            isCompact ? 'text-sm' : 'text-lg'
+          }`}>Dimensional Breakthroughs</h3>
         </div>
-        <div className="py-2 px-4 rounded-xl border border-emerald-500/10 bg-emerald-500/5 font-mono text-sm theme-text-main flex items-center gap-2">
-          <FlaskConical size={14} className="text-emerald-400 animate-pulse" />
+        <div className={`rounded-xl border border-emerald-500/10 bg-emerald-500/5 font-mono text-emerald-400 font-bold flex items-center gap-2 transition-all ${
+          isCompact ? 'py-1 px-3 text-xs' : 'py-2 px-4 text-sm'
+        }`}>
+          <FlaskConical size={isCompact ? 12 : 14} className="text-emerald-400 animate-pulse" />
           <span>{Math.floor(store.resources.science.amount).toLocaleString()}</span>
           <span className="text-neutral-500 text-xs font-sans font-bold uppercase">Portal Gen</span>
         </div>
       </div>
 
       {/* RESEARCH DIRECTORY GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+      <div className={`grid grid-cols-1 md:grid-cols-2 transition-all duration-300 ${
+        isCompact ? 'gap-3 mt-4' : 'gap-4 mt-6'
+      }`}>
         {(Object.entries(SCIENCES) as [ScienceType, typeof SCIENCES[ScienceType]][]).map(([id, s]) => {
           const isResearched = store.researched[id];
           
@@ -92,7 +104,9 @@ export default function ScienceTab({ store }: ScienceTabProps) {
           return (
             <div 
               key={id}
-              className={`p-5 flex flex-col justify-between gap-4 transition-all duration-350 border rounded-xl bg-neutral-950/10 backdrop-blur-sm relative ${
+              className={`flex flex-col justify-between transition-all duration-300 border rounded-xl bg-neutral-950/10 backdrop-blur-sm relative ${
+                isCompact ? 'p-3.5 gap-2.5' : 'p-5 gap-4'
+              } ${
                 isResearched 
                   ? 'border-neutral-900/30 opacity-45' 
                   : canAfford 
@@ -100,14 +114,16 @@ export default function ScienceTab({ store }: ScienceTabProps) {
                     : 'border-white/5 opacity-70'
               }`}
             >
-              <div className="flex flex-col gap-2">
+              <div className={`flex flex-col ${isCompact ? 'gap-1' : 'gap-2'}`}>
                 {/* Upper line */}
                 <div className="flex justify-between items-start gap-2">
                   <div className="flex items-center gap-2">
                     <span className="p-1 bg-neutral-900 border border-white/5 rounded-lg shrink-0">
                       {getScienceIcon(id)}
                     </span>
-                    <h4 className="font-bold text-sm sm:text-base text-white tracking-wide">
+                    <h4 className={`font-bold text-white tracking-wide transition-all ${
+                      isCompact ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'
+                    }`}>
                       {s.name}
                     </h4>
                   </div>
@@ -121,19 +137,25 @@ export default function ScienceTab({ store }: ScienceTabProps) {
                   )}
                 </div>
 
-                <p className="text-xs text-neutral-400 font-sans leading-relaxed hidden sm:block">
+                <p className={`text-neutral-400 font-sans leading-relaxed hidden sm:block ${
+                  isCompact ? 'text-[11px] leading-snug mt-0.5' : 'text-xs'
+                }`}>
                   {s.desc}
                 </p>
 
                 {/* Unified Unlocks Row */}
-                <div className="mt-1 flex items-start gap-1 text-[10px] text-emerald-400 font-mono">
+                <div className={`flex items-start gap-1 text-emerald-400 font-mono transition-all ${
+                  isCompact ? 'mt-0.5 text-[9px]' : 'mt-1 text-[10px]'
+                }`}>
                   <span className="font-bold">Boost:</span>
                   <span className="text-neutral-300">{s.effectsDesc}</span>
                 </div>
               </div>
 
               {!isResearched && (
-                <div className="flex flex-col gap-3 pt-3 border-t border-white/[0.03]">
+                <div className={`flex flex-col border-t border-white/[0.03] transition-all duration-300 ${
+                  isCompact ? 'gap-2 pt-2' : 'gap-3 pt-3'
+                }`}>
                   <div className="flex flex-wrap gap-1">
                     {costsList}
                   </div>
@@ -141,7 +163,9 @@ export default function ScienceTab({ store }: ScienceTabProps) {
                   <button
                     onClick={() => handleResearch(id)}
                     disabled={!canAfford}
-                    className={`w-full py-2 text-2xs uppercase tracking-widest font-bold flex items-center justify-center gap-1.5 rounded-lg transition-all cursor-pointer ${
+                    className={`w-full uppercase tracking-widest font-bold flex items-center justify-center gap-1.5 rounded-lg transition-all cursor-pointer ${
+                      isCompact ? 'py-1.5 text-[10px]' : 'py-2 text-2xs'
+                    } ${
                       canAfford 
                         ? 'bg-white text-black hover:bg-neutral-100 font-extrabold shadow-sm' 
                         : 'bg-white/5 border border-white/5 text-white/20 disabled:cursor-not-allowed font-medium'

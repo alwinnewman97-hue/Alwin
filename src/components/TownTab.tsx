@@ -1,6 +1,7 @@
 import React from 'react';
 import { GameState, JobType } from '../types';
 import { JOBS } from '../gameData';
+import { calculateJobStrengths } from '../store/useGameStore';
 import { playClickSound } from '../utils/audio';
 import { 
   Smile, 
@@ -19,6 +20,7 @@ interface TownTabProps {
 export default function TownTab({ store }: TownTabProps) {
   const kittens = Array.isArray(store.village?.kittens) ? store.village.kittens : [];
   const maxKittens = store.village?.maxKittens || 0;
+  const isCompact = store.density === 'compact';
 
   const jobCounts: Record<JobType | 'unemployed', number> = {
     farmer: 0,
@@ -36,6 +38,7 @@ export default function TownTab({ store }: TownTabProps) {
   });
 
   const freeKittens = jobCounts.unemployed;
+  const jobStrengths = calculateJobStrengths(kittens);
 
   const handleAssignJob = (kittenId: string, job: JobType | 'unemployed') => {
     store.assignJob(kittenId, job);
@@ -45,7 +48,7 @@ export default function TownTab({ store }: TownTabProps) {
   const handleAssignMultiple = (job: JobType, countToAssign: number) => {
     const idleKittens = kittens.filter(k => k.job === 'unemployed').slice(0, countToAssign);
     if (idleKittens.length > 0) {
-      idleKittens.forEach(k => store.assignJob(k.id, job));
+      store.assignJobsMultiple(idleKittens.map(k => k.id), job);
       if (store.soundEnabled) playClickSound('click');
     }
   };
@@ -53,7 +56,7 @@ export default function TownTab({ store }: TownTabProps) {
   const handleUnassignMultiple = (job: JobType, countToUnassign: number) => {
     const assignedKittens = kittens.filter(k => k.job === job).slice(0, countToUnassign);
     if (assignedKittens.length > 0) {
-      assignedKittens.forEach(k => store.assignJob(k.id, 'unemployed'));
+      store.assignJobsMultiple(assignedKittens.map(k => k.id), 'unemployed');
       if (store.soundEnabled) playClickSound('click');
     }
   };
@@ -72,11 +75,17 @@ export default function TownTab({ store }: TownTabProps) {
     <div className="flex flex-col flex-1 pb-10">
       
       {/* COMPACT TOWN HUD */}
-      <div className="flex justify-between items-center pb-6 border-b border-white/5 mx-2 sm:mx-6 mt-4">
-        <span className="text-[10px] uppercase font-bold text-neutral-500 tracking-widest leading-none">Clone Command Centre</span>
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm select-none">
+      <div className={`flex justify-between items-center border-b border-white/5 transition-all duration-300 ${
+        isCompact ? 'pb-3 mx-2 mt-2 gap-2' : 'pb-6 mx-2 sm:mx-6 mt-4'
+      }`}>
+        <span className={`uppercase font-bold text-neutral-500 tracking-widest leading-none ${
+          isCompact ? 'text-[9px]' : 'text-[10px]'
+        }`}>Clone Command Centre</span>
+        <div className={`flex flex-wrap items-center gap-y-2 text-sm select-none transition-all ${
+          isCompact ? 'gap-x-4 text-xs' : 'gap-x-6'
+        }`}>
           <div className="flex items-center gap-2 font-mono theme-text-main leading-none">
-            <Users size={14} className="text-neutral-500" />
+            <Users size={isCompact ? 12 : 14} className="text-neutral-500" />
             <span>{kittens.length}<span className="text-neutral-600">/{maxKittens}</span></span>
           </div>
 
@@ -91,14 +100,18 @@ export default function TownTab({ store }: TownTabProps) {
       </div>
 
       {/* QUICK LABOUR ACTIONS */}
-      <div className="flex items-center gap-3 mx-2 sm:mx-6 mt-6 mb-8 select-none">
+      <div className={`flex items-center select-none transition-all duration-300 ${
+        isCompact ? 'gap-2 mx-2 mt-4 mb-4' : 'gap-3 mx-2 sm:mx-6 mt-6 mb-8'
+      }`}>
         {kittens.length < maxKittens && (
           <button
             onClick={() => {
               store.forceAddKitten();
               if (store.soundEnabled) playClickSound('success');
             }}
-            className="text-[10px] uppercase tracking-widest font-bold theme-text-main bg-white/10 hover:bg-white/20 px-6 py-3 rounded-full transition-all active:scale-95 cursor-pointer"
+            className={`uppercase tracking-widest font-bold theme-text-main bg-white/10 hover:bg-white/20 rounded-full transition-all active:scale-95 cursor-pointer ${
+              isCompact ? 'text-[9px] px-4 py-2' : 'text-[10px] px-6 py-3'
+            }`}
           >
             Clone Alternate
           </button>
@@ -107,7 +120,9 @@ export default function TownTab({ store }: TownTabProps) {
         {kittens.length > 0 && freeKittens < kittens.length && (
           <button
             onClick={handleUnassignAll}
-            className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 border border-white/10 hover:text-white px-6 py-3 rounded-full transition-colors cursor-pointer"
+            className={`uppercase tracking-widest font-bold text-neutral-500 border border-white/10 hover:text-white rounded-full transition-colors cursor-pointer ${
+              isCompact ? 'text-[9px] px-4 py-2' : 'text-[10px] px-6 py-3'
+            }`}
           >
             Recall All
           </button>
@@ -115,7 +130,9 @@ export default function TownTab({ store }: TownTabProps) {
       </div>
 
       {/* JOBS SECTION */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
+      <div className={`grid grid-cols-1 md:grid-cols-2 transition-all duration-300 ${
+        isCompact ? 'gap-3' : 'gap-4 lg:gap-6'
+      }`}>
         {(Object.entries(JOBS) as [JobType, typeof JOBS[JobType]][]).map(([id, job]) => {
           if (id === 'miner' && !store.unlocks.minerals) return null;
           if (id === 'scholar' && store.buildings.library === 0) return null;
@@ -126,39 +143,54 @@ export default function TownTab({ store }: TownTabProps) {
           return (
             <div 
               key={id}
-              className="p-5 lg:p-6 flex flex-col justify-between gap-4 transition-all duration-[400ms] ease-out border theme-border hover:border-white/40 theme-bg-card/50 backdrop-blur-md"
+              className={`flex flex-col justify-between transition-all duration-300 border theme-border hover:border-white/40 theme-bg-card/50 backdrop-blur-md ${
+                isCompact ? 'p-3.5 gap-2.5' : 'p-5 lg:p-6 gap-4'
+              }`}
             >
-              <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 w-full">
-                <div className="flex items-center gap-4 min-w-0">
-                  <span className="text-2xl shrink-0">
+              <div className={`flex flex-col xl:flex-row xl:items-center justify-between gap-3 w-full`}>
+                <div className={`flex items-center min-w-0 transition-all ${isCompact ? 'gap-2.5' : 'gap-4'}`}>
+                  <span className={`shrink-0 transition-all ${isCompact ? 'text-xl' : 'text-2xl'}`}>
                     {id === 'farmer' ? '🌱' : id === 'woodcutter' ? '⚡' : id === 'scholar' ? '🔬' : id === 'miner' ? '⛏️' : '🔊'}
                   </span>
-                  <div className="min-w-0 flex flex-col gap-1.5">
-                    <div className="flex items-center gap-3">
-                      <span className="font-medium text-lg tracking-wide theme-text-main leading-none">{job.name}</span>
+                  <div className={`min-w-0 flex flex-col ${isCompact ? 'gap-0.5' : 'gap-1.5'}`}>
+                    <div className="flex items-center gap-2">
+                      <span className={`font-medium tracking-wide theme-text-main leading-none transition-all ${
+                        isCompact ? 'text-sm' : 'text-lg'
+                      }`}>{job.name}</span>
                       {count > 0 && (
-                        <span className="px-2 py-0.5 text-[10px] font-mono font-bold bg-white text-black leading-none rounded-sm">
+                        <span className={`font-mono font-bold bg-white text-black leading-none rounded-sm ${
+                          isCompact ? 'px-1.5 py-0.5 text-[9px]' : 'px-2 py-0.5 text-[10px]'
+                        }`}>
                           {count}
                         </span>
                       )}
                     </div>
-                    <span className="text-[10px] text-emerald-500 font-mono leading-none">{job.effectsDesc}</span>
+                    <span className={`text-emerald-500 font-mono leading-none ${isCompact ? 'text-[9px]' : 'text-[10px]'}`}>{job.effectsDesc}</span>
+                    {count > 0 && jobStrengths[id as JobType] > count && (
+                      <span className="text-[10px] text-emerald-400 font-mono leading-none mt-1">
+                        ✨ Output multiplier: {(jobStrengths[id as JobType]).toFixed(2)}x (Clone levels + traits)
+                      </span>
+                    )}
                   </div>
                 </div>
 
                 {/* Direct quick action assigners */}
-                <div className="flex items-center gap-2 shrink-0 self-start xl:self-center">
+                <div className="flex items-center gap-1.5 shrink-0 self-start xl:self-center">
                   <button 
                     onClick={() => handleUnassignMultiple(id, store.buyMultiplier || 1)}
                     disabled={count === 0}
-                    className="w-10 h-10 flex items-center justify-center bg-transparent border border-white/20 text-white hover:bg-white/10 disabled:opacity-20 rounded-full active:scale-95 transition-all cursor-pointer"
+                    className={`flex items-center justify-center bg-transparent border border-white/20 text-white hover:bg-white/10 disabled:opacity-20 rounded-full active:scale-95 transition-all cursor-pointer ${
+                      isCompact ? 'w-8 h-8' : 'w-10 h-10'
+                    }`}
                   >
-                    <Minus size={14} />
+                    <Minus size={isCompact ? 12 : 14} />
                   </button>
 
                   <button 
                     onClick={() => handleAutoAssign(id)}
-                    className="px-3 h-10 flex items-center justify-center text-[10px] uppercase font-bold text-neutral-500 hover:text-white transition-colors cursor-pointer"
+                    className={`flex items-center justify-center uppercase font-bold text-neutral-500 hover:text-white transition-colors cursor-pointer ${
+                      isCompact ? 'px-2 h-8 text-[9px]' : 'px-3 h-10 text-[10px]'
+                    }`}
                   >
                     All
                   </button>
@@ -166,9 +198,11 @@ export default function TownTab({ store }: TownTabProps) {
                   <button 
                     onClick={() => handleAssignMultiple(id, store.buyMultiplier || 1)}
                     disabled={freeKittens === 0}
-                    className="w-10 h-10 flex items-center justify-center bg-transparent border border-white/20 text-white hover:bg-white/10 disabled:opacity-20 rounded-full active:scale-95 transition-all cursor-pointer"
+                    className={`flex items-center justify-center bg-transparent border border-white/20 text-white hover:bg-white/10 disabled:opacity-20 rounded-full active:scale-95 transition-all cursor-pointer ${
+                      isCompact ? 'w-8 h-8' : 'w-10 h-10'
+                    }`}
                   >
-                    <Plus size={14} />
+                    <Plus size={isCompact ? 12 : 14} />
                   </button>
                 </div>
               </div>
