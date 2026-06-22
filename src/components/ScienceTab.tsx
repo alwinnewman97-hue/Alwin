@@ -121,7 +121,7 @@ export default function ScienceTab({ store }: ScienceTabProps) {
                   )}
                 </div>
 
-                <p className="text-xs text-neutral-400 font-sans leading-relaxed">
+                <p className="text-xs text-neutral-400 font-sans leading-relaxed hidden sm:block">
                   {s.desc}
                 </p>
 

@@ -91,7 +91,7 @@ export default function AchievementsTab({ store }: AchievementsTabProps) {
       </div>
 
       {/* HORIZONTAL FILTERS SELECTION RAIL */}
-      <div className="flex flex-wrap items-center gap-1.5 scrollbar-none overflow-x-auto py-1">
+      <div className="flex overflow-x-auto whitespace-nowrap scrollbar-none items-center gap-1.5 py-1">
         <span className="text-2xs uppercase tracking-wider text-neutral-500 font-black mr-2 flex items-center gap-1 shrink-0 font-sans">
           <Filter size={10} /> Filter:
         </span>
@@ -205,7 +205,7 @@ export default function AchievementsTab({ store }: AchievementsTabProps) {
                 </div>
 
                 {/* Lower Card Section (Quote OR conditions check) */}
-                <div className="mt-2 pt-3.5 border-t border-white/[0.03] flex flex-col gap-1.5 relative z-10">
+                <div className={`mt-2 pt-3.5 border-t border-white/[0.03] flex flex-col gap-1.5 relative z-10 ${isUnlocked ? 'hidden sm:flex' : ''}`}>
                   {isUnlocked ? (
                     <div className="flex flex-col gap-1">
                       <span className="text-[9px] uppercase font-bold text-[#39ff14] tracking-widest font-sans flex items-center gap-1 leading-none">

@@ -107,6 +107,7 @@ export interface GameState {
   activeCertificates?: ActiveCertificateBoost[];
   craftedCertificatesCount?: Record<string, number>;
   achievements?: Record<string, boolean>;
+  portalFlux: number;
 
   // Progression unlocks
   unlocks: {
@@ -138,7 +139,7 @@ export interface GameState {
   researchScience: (type: ScienceType) => void;
   buyUpgrade: (type: UpgradeType) => void;
   forceAddKitten: () => void;
-  resetGame: () => void;
+  multiversalReset: () => void;
   addLog: (text: string, type?: GameLogMessage['type']) => void;
   setGameSpeed: (speed: number) => void;
   toggleSound: () => void;

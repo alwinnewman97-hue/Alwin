@@ -244,7 +244,7 @@ export default function WorkshopTab({ store }: WorkshopTabProps) {
             <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
               🌌 C-137 Portal Crafting Chamber
             </h3>
-            <p className="text-xs text-neutral-400 max-w-xl">
+            <p className="text-xs text-neutral-400 max-w-xl hidden sm:block">
               Synthesize interdimensional security permits, clone authorization forms, and sovereignty clearances. 
               These high-authority certificates grant a <strong>temporary stackable global production boost</strong> across all job workers.
             </p>
@@ -399,7 +399,7 @@ export default function WorkshopTab({ store }: WorkshopTabProps) {
                   </div>
 
                   {/* Desc text */}
-                  <p className="text-xs text-neutral-400 leading-relaxed">
+                  <p className="text-xs text-neutral-400 leading-relaxed hidden sm:block">
                     {def.desc}
                   </p>
 

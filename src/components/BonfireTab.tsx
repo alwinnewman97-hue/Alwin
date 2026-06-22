@@ -86,7 +86,7 @@ export default function BonfireTab({ store }: BonfireTabProps) {
     <div className="flex flex-col flex-1 pb-10">
       
       {/* Sleek Sub-Tab Filter Bar */}
-      <div className="flex flex-wrap items-center gap-1 mb-6 p-1 bg-black/40 border border-white/5 rounded-xl">
+      <div className="flex overflow-x-auto whitespace-nowrap scrollbar-none items-center gap-1 mb-6 p-1 bg-black/40 border border-white/5 rounded-xl">
         {categories.map((cat) => {
           const Icon = cat.icon;
           const isActive = selectedSubTab === cat.id;
@@ -98,7 +98,7 @@ export default function BonfireTab({ store }: BonfireTabProps) {
                 setSelectedSubTab(cat.id);
                 if (store.soundEnabled) playClickSound('click');
               }}
-              className={`flex-1 min-w-[90px] py-2 px-3 rounded-lg flex items-center justify-center gap-2 transition-all text-2xs uppercase tracking-wider cursor-pointer font-bold ${
+              className={`flex-1 shrink-0 min-w-max whitespace-nowrap py-2 px-3.5 rounded-lg flex items-center justify-center gap-2 transition-all text-2xs uppercase tracking-wider cursor-pointer font-bold ${
                 isActive 
                   ? 'bg-neutral-900 border border-white/10 text-white shadow-sm' 
                   : 'text-neutral-500 hover:text-neutral-300 border border-transparent'
@@ -182,7 +182,7 @@ export default function BonfireTab({ store }: BonfireTabProps) {
                   </span>
                 </div>
 
-                <p className="text-xs text-neutral-400 font-sans leading-relaxed">
+                <p className="text-xs text-neutral-400 font-sans leading-relaxed hidden sm:block">
                   {b.desc}
                 </p>
 

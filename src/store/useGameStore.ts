@@ -158,6 +158,7 @@ export const useGameStore = create<GameState>()(
       activeCertificates: [],
       craftedCertificatesCount: { bronze: 0, silver: 0, gold: 0, infinite: 0 },
       achievements: {},
+      portalFlux: 0,
       season: {
         current: 'Spring',
         daysPassed: 0,
@@ -250,6 +251,8 @@ export const useGameStore = create<GameState>()(
 
         const totalBoost = updatedActive.reduce((acc, cert) => acc + cert.boostPercent, 0);
         const certificateMultiplier = 1 + totalBoost;
+        const portalFluxMultiplier = 1 + (state.portalFlux * 0.1);
+        const productionMultiplier = certificateMultiplier * portalFluxMultiplier;
 
         // 1. Storage upgrade ratios
         const barnMultiplier = state.upgrades.reinforcedBarns ? 1.4 : 1.0;
@@ -316,7 +319,7 @@ export const useGameStore = create<GameState>()(
 
         // Base field production is passive
         const fieldsPassiveRate = state.buildings.catnipField * 0.63 * seasonModifier * aqueductBoost;
-        const farmerRate = jobCounts.farmer * 5.0 * farmerEffBonus * seasonModifier * certificateMultiplier;
+        const farmerRate = jobCounts.farmer * 5.0 * farmerEffBonus * seasonModifier * productionMultiplier;
         let catnipRate = fieldsPassiveRate + farmerRate;
 
         // KITTEN STARVATION: Each kitten consumes 4.25 catnip / sec
@@ -342,21 +345,21 @@ export const useGameStore = create<GameState>()(
         if (state.upgrades.ironAxes) axeMultiplier = 1.75;
         else if (state.upgrades.mineralAxes) axeMultiplier = 1.25;
 
-        const woodcutterBase = jobCounts.woodcutter * 0.10 * axeMultiplier * efficiencyFactor * certificateMultiplier;
+        const woodcutterBase = jobCounts.woodcutter * 0.10 * axeMultiplier * efficiencyFactor * productionMultiplier;
         let woodRate = woodcutterBase;
 
         // SCHOLAR
         // Libraries & academies boost scholars
         const academyScholarMod = 1 + (state.buildings.academy * 0.20);
-        let scienceRate = jobCounts.scholar * 0.25 * academyScholarMod * efficiencyFactor * certificateMultiplier;
+        let scienceRate = jobCounts.scholar * 0.25 * academyScholarMod * efficiencyFactor * productionMultiplier;
 
         // MINER
-        const minerBase = jobCounts.miner * 0.18 * efficiencyFactor * certificateMultiplier;
+        const minerBase = jobCounts.miner * 0.18 * efficiencyFactor * productionMultiplier;
         // Mine adds slightly passive mineral gain as well
         let mineralsRate = minerBase + (state.buildings.mine * 0.05);
 
         // PRIEST
-        let cultureRate = jobCounts.priest * 0.15 * efficiencyFactor * certificateMultiplier;
+        let cultureRate = jobCounts.priest * 0.15 * efficiencyFactor * productionMultiplier;
 
         // SMELTER PASSIVES
         // Consumes 1.0 Wood and 10 Minerals to smelt +0.15 Iron per smelter
@@ -776,9 +779,14 @@ export const useGameStore = create<GameState>()(
          return state;
       }),
 
-      resetGame: () => {
-        // complete wipe
-        if (window.confirm("Are you absolutely sure you want to trigger a multiversal reboot? This will wipe all Mortys, labs, and portal formulas.")) {
+      multiversalReset: () => {
+        const state = get();
+        // Calculate flux from progress (total buildings + kittens)
+        const totalBuildings = Object.values(state.buildings).reduce((a, b) => a + b, 0);
+        const totalKittens = state.village.kittens.length;
+        const fluxEarned = Math.floor(Math.sqrt((totalBuildings + totalKittens + 1) / 10));
+
+        if (window.confirm(`Are you absolutely sure you want to trigger a multiversal reboot? You will earn ${fluxEarned} Portal Flux, which grants a global ${fluxEarned * 10}% production multiplier. All other progress will be reset.`)) {
           set({
             resources: BASE_RESOURCES,
             buildings: BASE_BUILDINGS,
@@ -805,15 +813,15 @@ export const useGameStore = create<GameState>()(
               workshop: false,
               culture: false,
             },
-            gameSpeed: 1,
             logs: [
               {
                 id: 'reset',
                 time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-                text: 'Interdimensional reboot complete. C-137 timeline initialized.',
+                text: `Multiversal reboot complete! You earned ${fluxEarned} Portal Flux.`,
                 type: 'success'
               }
             ],
+            portalFlux: state.portalFlux + fluxEarned,
             lastTick: Date.now()
           });
         }

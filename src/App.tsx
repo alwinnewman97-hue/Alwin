@@ -32,11 +32,12 @@ import TownTab from './components/TownTab';
 import ScienceTab from './components/ScienceTab';
 import WorkshopTab from './components/WorkshopTab';
 import AchievementsTab from './components/AchievementsTab';
+import SettingsTab from './components/SettingsTab';
 import { playClickSound } from './utils/audio';
 import { AnimatePresence, motion } from 'motion/react';
 import SplashStartup from './components/SplashStartup';
 
-type ActiveTabType = 'bonfire' | 'town' | 'science' | 'workshop' | 'achievements';
+type ActiveTabType = 'bonfire' | 'town' | 'science' | 'workshop' | 'achievements' | 'settings';
 
 export default function App() {
   const store = useGameStore();
@@ -181,6 +182,8 @@ export default function App() {
         return <WorkshopTab store={store} />;
       case 'achievements':
         return <AchievementsTab store={store} />;
+      case 'settings':
+        return <SettingsTab store={store} />;
       default:
         return <BonfireTab store={store} />;
     }
@@ -238,7 +241,7 @@ export default function App() {
       )}
 
       {/* AWWWARDS-STYLE SIDE NAVIGATION DOCK */}
-      <nav className="fixed md:static bottom-4 left-4 right-4 md:inset-y-0 md:left-0 z-50 md:w-28 md:h-screen bg-black/40 md:bg-transparent backdrop-blur-3xl md:backdrop-blur-none border border-white/5 md:border-none md:border-r theme-border rounded-[2rem] md:rounded-none flex flex-row md:flex-col items-center justify-between p-2 md:py-8 shadow-2xl md:shadow-none shrink-0">
+      <nav className="fixed md:static bottom-2 left-2 right-2 md:inset-y-0 md:left-0 z-50 md:w-28 md:h-screen bg-black/40 md:bg-transparent backdrop-blur-3xl md:backdrop-blur-none border border-white/5 md:border-none md:border-r theme-border rounded-[1.5rem] md:rounded-none flex flex-row md:flex-col items-center justify-between p-1.5 md:py-8 shadow-2xl md:shadow-none shrink-0">
         
         {/* Top items: Logo and Primary Tabs */}
         <div className="flex flex-row md:flex-col items-center gap-1 md:gap-6 w-full">
@@ -246,35 +249,35 @@ export default function App() {
             <Flame size={24} className="theme-text-main"/>
           </div>
 
-          <div className="flex flex-row md:flex-col gap-1.5 w-full justify-around md:justify-start px-2 md:px-4">
+          <div className="flex flex-row md:flex-col gap-1 md:gap-1.5 w-full justify-around md:justify-start px-1 md:px-4">
             <button
               onClick={() => handleTabChange('bonfire')}
-              className={`p-3 md:py-4 md:w-full rounded-2xl flex flex-col items-center gap-2 text-xs font-bold uppercase tracking-widest cursor-pointer portal-tab-btn relative ${
+              className={`p-2 sm:p-3 md:py-4 md:w-full rounded-xl sm:rounded-2xl flex flex-col items-center gap-1 sm:gap-2 text-xs font-bold uppercase tracking-widest cursor-pointer portal-tab-btn relative ${
                 activeTab === 'bonfire' 
                   ? 'portal-tab-btn-active scale-100' 
                   : 'text-neutral-500 scale-95'
               }`}
             >
               <Sparkle size={18} className={activeTab === 'bonfire' ? 'text-emerald-400 animate-pulse' : 'text-neutral-400'} />
-              <span className="text-[9px] md:text-[10px] hidden sm:block font-sans">Citadel</span>
+              <span className="text-[9px] md:text-[10px] hidden md:block font-sans">Citadel</span>
               {activeTab === 'bonfire' && (
-                <div className="portal-tab-indicator absolute bottom-0 left-6 right-6 h-[2px] md:left-0 md:top-4 md:bottom-4 md:w-[3px] md:h-auto rounded-full" />
+                <div className="portal-tab-indicator absolute bottom-0 left-2 right-2 sm:left-4 sm:right-4 h-[2px] md:left-0 md:top-4 md:bottom-4 md:w-[3px] md:h-auto rounded-full" />
               )}
             </button>
 
             {store.unlocks.village && (
               <button
                 onClick={() => handleTabChange('town')}
-                className={`p-3 md:py-4 md:w-full rounded-2xl flex flex-col items-center gap-2 text-xs font-bold uppercase tracking-widest cursor-pointer portal-tab-btn relative ${
+                className={`p-2 sm:p-3 md:py-4 md:w-full rounded-xl sm:rounded-2xl flex flex-col items-center gap-1 sm:gap-2 text-xs font-bold uppercase tracking-widest cursor-pointer portal-tab-btn relative ${
                   activeTab === 'town' 
                     ? 'portal-tab-btn-active scale-100' 
                     : 'text-neutral-500 scale-95'
                 }`}
               >
                 <Users size={18} className={activeTab === 'town' ? 'text-emerald-400 animate-pulse' : 'text-neutral-400'} />
-                <span className="text-[9px] md:text-[10px] hidden sm:block font-sans">Clone Bay</span>
+                <span className="text-[9px] md:text-[10px] hidden md:block font-sans">Clone Bay</span>
                 {activeTab === 'town' && (
-                  <div className="portal-tab-indicator absolute bottom-0 left-6 right-6 h-[2px] md:left-0 md:top-4 md:bottom-4 md:w-[3px] md:h-auto rounded-full" />
+                  <div className="portal-tab-indicator absolute bottom-0 left-2 right-2 sm:left-4 sm:right-4 h-[2px] md:left-0 md:top-4 md:bottom-4 md:w-[3px] md:h-auto rounded-full" />
                 )}
               </button>
             )}
@@ -282,16 +285,16 @@ export default function App() {
             {store.unlocks.science && (
               <button
                 onClick={() => handleTabChange('science')}
-                className={`p-3 md:py-4 md:w-full rounded-2xl flex flex-col items-center gap-2 text-xs font-bold uppercase tracking-widest cursor-pointer portal-tab-btn relative ${
+                className={`p-2 sm:p-3 md:py-4 md:w-full rounded-xl sm:rounded-2xl flex flex-col items-center gap-1 sm:gap-2 text-xs font-bold uppercase tracking-widest cursor-pointer portal-tab-btn relative ${
                   activeTab === 'science' 
                     ? 'portal-tab-btn-active scale-100' 
                     : 'text-neutral-500 scale-95'
                 }`}
               >
                 <FlaskConical size={18} className={activeTab === 'science' ? 'text-emerald-400 animate-pulse' : 'text-neutral-400'} />
-                <span className="text-[9px] md:text-[10px] hidden sm:block font-sans">Labs</span>
+                <span className="text-[9px] md:text-[10px] hidden md:block font-sans">Labs</span>
                 {activeTab === 'science' && (
-                  <div className="portal-tab-indicator absolute bottom-0 left-6 right-6 h-[2px] md:left-0 md:top-4 md:bottom-4 md:w-[3px] md:h-auto rounded-full" />
+                  <div className="portal-tab-indicator absolute bottom-0 left-2 right-2 sm:left-4 sm:right-4 h-[2px] md:left-0 md:top-4 md:bottom-4 md:w-[3px] md:h-auto rounded-full" />
                 )}
               </button>
             )}
@@ -299,32 +302,47 @@ export default function App() {
              {store.unlocks.workshop && (
               <button
                 onClick={() => handleTabChange('workshop')}
-                className={`p-3 md:py-4 md:w-full rounded-2xl flex flex-col items-center gap-2 text-xs font-bold uppercase tracking-widest cursor-pointer portal-tab-btn relative ${
+                className={`p-2 sm:p-3 md:py-4 md:w-full rounded-xl sm:rounded-2xl flex flex-col items-center gap-1 sm:gap-2 text-xs font-bold uppercase tracking-widest cursor-pointer portal-tab-btn relative ${
                   activeTab === 'workshop' 
                     ? 'portal-tab-btn-active scale-100' 
                     : 'text-neutral-500 scale-95'
                 }`}
               >
                 <Hammer size={18} className={activeTab === 'workshop' ? 'text-emerald-400 animate-pulse' : 'text-neutral-400'} />
-                <span className="text-[9px] md:text-[10px] hidden sm:block font-sans">Refine</span>
+                <span className="text-[9px] md:text-[10px] hidden md:block font-sans">Refine</span>
                 {activeTab === 'workshop' && (
-                  <div className="portal-tab-indicator absolute bottom-0 left-6 right-6 h-[2px] md:left-0 md:top-4 md:bottom-4 md:w-[3px] md:h-auto rounded-full" />
+                  <div className="portal-tab-indicator absolute bottom-0 left-2 right-2 sm:left-4 sm:right-4 h-[2px] md:left-0 md:top-4 md:bottom-4 md:w-[3px] md:h-auto rounded-full" />
                 )}
               </button>
             )}
 
             <button
               onClick={() => handleTabChange('achievements')}
-              className={`p-3 md:py-4 md:w-full rounded-2xl flex flex-col items-center gap-2 text-xs font-bold uppercase tracking-widest cursor-pointer portal-tab-btn relative ${
+              className={`p-2 sm:p-3 md:py-4 md:w-full rounded-xl sm:rounded-2xl flex flex-col items-center gap-1 sm:gap-2 text-xs font-bold uppercase tracking-widest cursor-pointer portal-tab-btn relative ${
                 activeTab === 'achievements' 
                   ? 'portal-tab-btn-active scale-100' 
                   : 'text-[#39ff14]/90 scale-95'
               }`}
             >
               <Award size={18} className={activeTab === 'achievements' ? 'text-[#39ff14] animate-pulse' : 'text-neutral-400'} />
-              <span className="text-[9px] md:text-[10px] hidden sm:block font-sans">Badges</span>
+              <span className="text-[9px] md:text-[10px] hidden md:block font-sans">Badges</span>
               {activeTab === 'achievements' && (
-                <div className="portal-tab-indicator absolute bottom-0 left-6 right-6 h-[2px] md:left-0 md:top-4 md:bottom-4 md:w-[3px] md:h-auto rounded-full font-sans text-[#39ff14]/90" />
+                <div className="portal-tab-indicator absolute bottom-0 left-2 right-2 sm:left-4 sm:right-4 h-[2px] md:left-0 md:top-4 md:bottom-4 md:w-[3px] md:h-auto rounded-full font-sans text-[#39ff14]/90" />
+              )}
+            </button>
+
+            <button
+              onClick={() => handleTabChange('settings')}
+              className={`p-2 sm:p-3 md:py-4 md:w-full rounded-xl sm:rounded-2xl flex flex-col items-center gap-1 sm:gap-2 text-xs font-bold uppercase tracking-widest cursor-pointer portal-tab-btn relative ${
+                activeTab === 'settings' 
+                  ? 'portal-tab-btn-active scale-100' 
+                  : 'text-neutral-500 scale-95'
+              }`}
+            >
+              <Settings2 size={18} className={activeTab === 'settings' ? 'text-emerald-400 animate-pulse' : 'text-neutral-400'} />
+              <span className="text-[9px] md:text-[10px] hidden md:block font-sans">Settings</span>
+              {activeTab === 'settings' && (
+                <div className="portal-tab-indicator absolute bottom-0 left-2 right-2 sm:left-4 sm:right-4 h-[2px] md:left-0 md:top-4 md:bottom-4 md:w-[3px] md:h-auto rounded-full" />
               )}
             </button>
           </div>
@@ -388,19 +406,6 @@ export default function App() {
                     4X
                   </button>
                 </div>
-                
-                <button
-                  onClick={() => {
-                    if (confirm("Initiate multiversal reboot? Timeline progress will be lost.")) {
-                      store.resetGame();
-                      window.location.reload();
-                    }
-                  }}
-                  className="p-2.5 rounded-xl text-neutral-600 hover:text-red-500 transition-colors hidden sm:block"
-                  title="Erase Civilisation"
-                >
-                  <Trash2 size={16} />
-                </button>
              </div>
           </div>
 

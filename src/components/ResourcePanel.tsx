@@ -116,7 +116,7 @@ export default function ResourcePanel({
                 {curSeason.name}
               </span>
               <span className="text-[10px] theme-text-sec font-mono">
-                Coordinate Day {store.season.daysPassed}/{store.season.totalDays}
+                <span className="hidden sm:inline">Coordinate </span>Day {store.season.daysPassed}/{store.season.totalDays}
               </span>
             </div>
           </div>
@@ -169,7 +169,7 @@ export default function ResourcePanel({
 
       {/* RIGHT CLUSTER: The Resource Stream */}
       <div className="flex-1 flex overflow-x-auto scrollbar-none pb-4 xl:pb-0 -mx-5 px-5 sm:mx-0 sm:px-0">
-        <div className="flex items-center gap-3 sm:gap-4 md:gap-6 w-max font-sans">
+        <div className="flex items-center gap-2 sm:gap-4 md:gap-6 w-max font-sans">
           
           {resourcesList.map((res) => {
             const unlocked = res.id === 'catnip' || store.unlocks[res.id as keyof typeof store.unlocks];
@@ -181,23 +181,24 @@ export default function ResourcePanel({
             const percent = getPercent(cur, limit);
 
             return (
-              <div key={res.id} className="flex flex-col gap-1.5 w-[110px] xl:w-[130px] shrink-0">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-lg theme-bg-card border theme-border backdrop-blur-md">
+              <div key={res.id} className="flex flex-col gap-1 w-[80px] sm:w-[124px] xl:w-[130px] shrink-0">
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <div className="p-1 sm:p-1.5 rounded-lg theme-bg-card border theme-border backdrop-blur-md shrink-0">
                     {getResourceIcon(res.id)}
                   </div>
-                  <div className="flex flex-col col-span-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider theme-text-sec leading-none truncate max-w-[80px]">{res.label}</span>
-                    <span className={getRateColor(res.rate) + " text-[9px] mt-0.5 leading-none font-mono"}>
-                      {res.rate >= 0 ? '+' : ''}{res.rate.toFixed(1)}/s
+                  <div className="flex flex-col col-span-2 min-w-0">
+                    <span className="text-[10px] font-bold uppercase tracking-wider theme-text-sec leading-none truncate max-w-[80px] hidden sm:block">{res.label}</span>
+                    <span className={getRateColor(res.rate) + " text-[8px] sm:text-[9px] mt-0.5 leading-none font-mono"}>
+                      {res.rate >= 0 ? '+' : ''}{res.rate.toFixed(1)}
+                      <span className="hidden sm:inline">/s</span>
                     </span>
                   </div>
                 </div>
                 
-                <div className="mt-1">
-                  <div className="flex items-end justify-between font-mono mb-1">
-                    <span className="text-sm xl:text-base font-bold theme-text-main leading-none">{formatNumber(cur)}</span>
-                    {showLimit && <span className="text-[10px] theme-text-muted leading-none">/{formatNumber(limit)}</span>}
+                <div className="mt-0.5 sm:mt-1">
+                  <div className="flex items-baseline sm:items-end justify-between font-mono mb-0.5 sm:mb-1">
+                    <span className="text-xs sm:text-sm xl:text-base font-bold theme-text-main leading-none">{formatNumber(cur)}</span>
+                    {showLimit && <span className="text-[8px] sm:text-[10px] theme-text-muted leading-none">/{formatNumber(limit)}</span>}
                   </div>
                   
                   {showLimit && (
@@ -227,8 +228,9 @@ export default function ResourcePanel({
             const cur = store.resources[id]?.amount ?? 0;
 
             return (
-              <div key={id} className="flex flex-col justify-between py-1 px-3 border-l border-dashed theme-border h-full shrink-0">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-2 mt-0.5">{labelMap[id] || id}</span>
+              <div key={id} className="flex flex-col justify-between py-1 px-2.5 sm:px-3 border-l border-dashed theme-border h-full shrink-0">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-2 mt-0.5 hidden sm:block">{labelMap[id] || id}</span>
+                <span className="text-2xs font-bold uppercase text-neutral-500 sm:hidden block leading-none mb-1">{id === 'parchment' ? 'Form.' : labelMap[id] ? labelMap[id].split('-')[1] || labelMap[id].split(' ')[1] || labelMap[id].substring(0, 5) : id}</span>
                 <span className="text-sm xl:text-base font-bold theme-text-main font-mono leading-none mt-auto mb-1">
                    {formatNumber(cur)}
                 </span>
