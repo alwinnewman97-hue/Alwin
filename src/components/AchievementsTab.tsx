@@ -33,7 +33,7 @@ export default function AchievementsTab({ store }: AchievementsTabProps) {
       case 'quantum':
         return { label: 'Quantum', badge: 'bg-purple-500/10 text-purple-400 border-purple-500/20' };
       default:
-        return { label: 'General', badge: 'bg-neutral-500/10 text-neutral-400 border-neutral-500/20' };
+        return { label: 'General', badge: 'bg-neutral-500/10 theme-text-muted border-neutral-500/20' };
     }
   };
 
@@ -43,22 +43,22 @@ export default function AchievementsTab({ store }: AchievementsTabProps) {
       {/* HEADER BAR AND TITLE */}
       <div className="border-b border-white/[0.04] pb-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-black text-white tracking-wide flex items-center gap-2">
+          <h2 className="text-xl sm:text-2xl font-black theme-text-main tracking-wide flex items-center gap-2">
             <Award className="text-[#39ff14] animate-pulse" size={24} />
             <span>Dimensions & Milestones</span>
           </h2>
-          <span className="text-[10px] uppercase font-bold text-neutral-500 tracking-widest block mt-0.5 font-sans leading-none">
+          <span className="text-[10px] uppercase font-bold theme-text-muted tracking-widest block mt-0.5 font-sans leading-none">
             Citadel Registry Achievements
           </span>
         </div>
 
         {/* GLOWING REWARD STATISTICS METERS */}
-        <div className="bg-neutral-950/30 border border-neutral-900 rounded-2xl p-4 flex items-center gap-5 md:max-w-xs w-full backdrop-blur-sm shadow-sm">
+        <div className="theme-bg-panel border border-neutral-900 rounded-2xl p-4 flex items-center gap-5 md:max-w-xs w-full backdrop-blur-sm shadow-sm">
           <div className="relative w-12 h-12 flex items-center justify-center shrink-0">
             {/* SVG Progress Circle */}
             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
               <path
-                className="text-neutral-900"
+                className="theme-text-sec"
                 strokeWidth="2.5"
                 stroke="currentColor"
                 fill="none"
@@ -74,17 +74,17 @@ export default function AchievementsTab({ store }: AchievementsTabProps) {
                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
               />
             </svg>
-            <div className="absolute text-xs font-black text-white">
+            <div className="absolute text-xs font-black theme-text-main">
               {completionPercentage}%
             </div>
           </div>
           <div className="flex flex-col">
-            <span className="text-2xs uppercase tracking-wider text-neutral-400 font-extrabold">Registry Completion</span>
+            <span className="text-2xs uppercase tracking-wider theme-text-muted font-extrabold">Registry Completion</span>
             <div className="flex items-baseline gap-1 mt-0.5">
               <span className="text-xl font-black text-[#39ff14] tracking-tight">{unlockedCount}</span>
-              <span className="text-xs text-neutral-500 font-bold">/</span>
-              <span className="text-sm text-neutral-400 font-bold">{totalCount}</span>
-              <span className="text-xs text-neutral-500 font-medium ml-1">Unlocked</span>
+              <span className="text-xs theme-text-muted font-bold">/</span>
+              <span className="text-sm theme-text-muted font-bold">{totalCount}</span>
+              <span className="text-xs theme-text-muted font-medium ml-1">Unlocked</span>
             </div>
           </div>
         </div>
@@ -92,7 +92,7 @@ export default function AchievementsTab({ store }: AchievementsTabProps) {
 
       {/* HORIZONTAL FILTERS SELECTION RAIL */}
       <div className="flex overflow-x-auto whitespace-nowrap scrollbar-none items-center gap-1.5 py-1">
-        <span className="text-2xs uppercase tracking-wider text-neutral-500 font-black mr-2 flex items-center gap-1 shrink-0 font-sans">
+        <span className="text-2xs uppercase tracking-wider theme-text-muted font-black mr-2 flex items-center gap-1 shrink-0 font-sans">
           <Filter size={10} /> Filter:
         </span>
         
@@ -110,8 +110,8 @@ export default function AchievementsTab({ store }: AchievementsTabProps) {
               onClick={() => setActiveFilter(filter.id)}
               className={`px-3 py-1.5 text-xs font-bold tracking-wide rounded-xl border cursor-pointer select-none transition-all duration-200 shrink-0 ${
                 isActive
-                  ? 'bg-white text-black border-transparent font-black shadow-md'
-                  : 'bg-neutral-950/20 border-white/[0.04] text-neutral-400 hover:text-neutral-200 hover:border-neutral-800'
+                  ? 'theme-accent-bg border-transparent font-black shadow-md'
+                  : 'theme-bg-panel theme-border theme-text-muted hover:theme-text-main'
               }`}
             >
               {filter.label}
@@ -122,9 +122,9 @@ export default function AchievementsTab({ store }: AchievementsTabProps) {
 
       {/* ACHIEVEMENTS CARDS BENTO GRID */}
       {filteredAchievements.length === 0 ? (
-        <div className="flex flex-col items-center justify-center p-12 text-center border border-dashed border-white/[0.04] rounded-2xl bg-neutral-950/5">
-          <AlertCircle className="text-neutral-600 mb-2" size={32} />
-          <p className="text-sm text-neutral-400 font-semibold font-sans">No achievements found in this branch.</p>
+        <div className="flex flex-col items-center justify-center p-12 text-center border border-dashed border-white/[0.04] rounded-2xl theme-bg-panel">
+          <AlertCircle className="theme-text-muted mb-2" size={32} />
+          <p className="text-sm theme-text-muted font-semibold font-sans">No achievements found in this branch.</p>
           <button 
             onClick={() => setActiveFilter('all')}
             className="text-xs text-[#39ff14] mt-2 underline cursor-pointer"
@@ -146,7 +146,7 @@ export default function AchievementsTab({ store }: AchievementsTabProps) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
-                className={`p-5 rounded-2xl border transition-all duration-350 flex flex-col justify-between gap-5 relative overflow-hidden bg-neutral-950/10 backdrop-blur-sm ${
+                className={`p-5 rounded-2xl border transition-all duration-350 flex flex-col justify-between gap-5 relative overflow-hidden theme-bg-panel backdrop-blur-sm ${
                   isUnlocked
                     ? 'border-[#39ff14]/30 shadow-[0_0_20px_rgba(57,255,20,0.03)] opacity-100 hover:border-[#39ff14]/60'
                     : 'border-white/[0.03] opacity-55'
@@ -169,7 +169,7 @@ export default function AchievementsTab({ store }: AchievementsTabProps) {
                         <CheckCircle2 size={11} /> Unlocked
                       </span>
                     ) : (
-                      <span className="text-[10px] text-neutral-500 font-semibold flex items-center gap-0.5 font-mono">
+                      <span className="text-[10px] theme-text-muted font-semibold flex items-center gap-0.5 font-mono">
                         <Lock size={10} /> Locked
                       </span>
                     )}
@@ -178,7 +178,7 @@ export default function AchievementsTab({ store }: AchievementsTabProps) {
                   {/* Title and Icon Area */}
                   <div className="flex items-center gap-3">
                     <span 
-                      className={`text-3xl shrink-0 p-2.5 rounded-xl border flex items-center justify-center transition-all bg-neutral-950/50 ${
+                      className={`text-3xl shrink-0 p-2.5 rounded-xl border flex items-center justify-center transition-all theme-bg-panel ${
                         isUnlocked 
                           ? 'border-[#39ff14]/20 scale-100' 
                           : 'border-white/[0.04] scale-95 grayscale'
@@ -188,18 +188,18 @@ export default function AchievementsTab({ store }: AchievementsTabProps) {
                     </span>
                     <div className="flex flex-col min-w-0">
                       <h4 className={`font-extrabold text-sm sm:text-base tracking-wide leading-tight truncate ${
-                        isUnlocked ? 'text-white' : 'text-neutral-400'
+                        isUnlocked ? 'theme-text-main' : 'theme-text-muted'
                       }`}>
                         {ach.name}
                       </h4>
-                      <p className="text-2xs text-neutral-500 font-mono mt-0.5 truncate uppercase">
+                      <p className="text-2xs theme-text-muted font-mono mt-0.5 truncate uppercase">
                         {isUnlocked ? `ID: ${ach.id}` : 'Classified'}
                       </p>
                     </div>
                   </div>
 
                   {/* Description Details */}
-                  <p className={`text-xs leading-relaxed font-sans ${isUnlocked ? 'text-neutral-300' : 'text-neutral-500'}`}>
+                  <p className={`text-xs leading-relaxed font-sans ${isUnlocked ? 'theme-text-sec' : 'theme-text-muted'}`}>
                     {ach.desc}
                   </p>
                 </div>
@@ -211,16 +211,16 @@ export default function AchievementsTab({ store }: AchievementsTabProps) {
                       <span className="text-[9px] uppercase font-bold text-[#39ff14] tracking-widest font-sans flex items-center gap-1 leading-none">
                         <Sparkles size={8} /> Rick says:
                       </span>
-                      <p className="text-2xs font-serif text-neutral-400 italic tracking-wide leading-relaxed">
+                      <p className="text-2xs font-serif theme-text-muted italic tracking-wide leading-relaxed">
                         &ldquo;{ach.quote}&rdquo;
                       </p>
                     </div>
                   ) : (
                     <div className="flex flex-col gap-1">
-                      <span className="text-[9px] uppercase font-bold text-neutral-500 tracking-widest font-sans leading-none">
+                      <span className="text-[9px] uppercase font-bold theme-text-muted tracking-widest font-sans leading-none">
                         Requirements
                       </span>
-                      <p className="text-xs text-neutral-400 font-medium font-mono leading-relaxed">
+                      <p className="text-xs theme-text-muted font-medium font-mono leading-relaxed">
                         {ach.conditionDesc}
                       </p>
                     </div>

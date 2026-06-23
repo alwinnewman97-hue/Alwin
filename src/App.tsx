@@ -19,6 +19,7 @@ import {
   Github,
   Sun,
   Moon,
+  Palette,
   Eye,
   Sliders,
   ChevronsLeft,
@@ -136,7 +137,9 @@ export default function App() {
   const totalBoost = (store.activeCertificates || []).reduce((acc, cert) => acc + cert.boostPercent, 0);
   const certificateMultiplier = 1 + totalBoost;
   const portalFluxMultiplier = 1 + (store.portalFlux * 0.1);
-  let productionMultiplier = certificateMultiplier * portalFluxMultiplier;
+  const dimAmplifierLevel = store.portalUpgrades?.dimensionalAmplifier ?? 0;
+  const dimensionalMultiplier = 1 + (dimAmplifierLevel * 0.15);
+  let productionMultiplier = certificateMultiplier * portalFluxMultiplier * dimensionalMultiplier;
 
   if (store.insaneMode) {
     productionMultiplier *= 0.65;
@@ -207,7 +210,10 @@ export default function App() {
 
   const academyScholarMod = 1 + (store.buildings.academy * 0.20);
   const writingScholarBonus = store.researched.writing ? 1.25 : 1.0;
-  const computedScienceRate = jobStrengths.scholar * 0.25 * academyScholarMod * efficiencyFactor * productionMultiplier * writingScholarBonus;
+  
+  const quantumResonatorLevel = store.portalUpgrades?.quantumResonator ?? 0;
+  const scholarResonatorMultiplier = 1 + (quantumResonatorLevel * 0.25);
+  let computedScienceRate = jobStrengths.scholar * 0.25 * academyScholarMod * efficiencyFactor * productionMultiplier * writingScholarBonus * scholarResonatorMultiplier;
 
   const theologyPriestBonus = store.researched.theology ? 1.40 : 1.0;
   let computedCultureRate = jobStrengths.priest * 0.15 * efficiencyFactor * productionMultiplier * theologyPriestBonus;
@@ -215,6 +221,17 @@ export default function App() {
   if (store.activeAnomaly?.type === 'cromulon') {
     computedCultureRate -= 4.0;
   }
+
+  // Apply chronal acceleration multiplier to all rendering rates
+  const chronalDilatorLevel = store.portalUpgrades?.chronalDilator ?? 0;
+  const chronalMultiplier = 1 + (chronalDilatorLevel * 0.10);
+
+  computedCatnipRate *= chronalMultiplier;
+  computedWoodRate *= chronalMultiplier;
+  computedMineralsRate *= chronalMultiplier;
+  computedIronRate *= chronalMultiplier;
+  computedScienceRate *= chronalMultiplier;
+  computedCultureRate *= chronalMultiplier;
 
   const handleTabChange = (tab: ActiveTabType) => {
     setActiveTab(tab);
@@ -241,7 +258,7 @@ export default function App() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-[100dvh] overflow-hidden theme-bg-app theme-text-main antialiased font-sans max-w-full relative selection:bg-white/10 selection:theme-text-main">
+    <div className="flex flex-col md:flex-row h-[100dvh] overflow-hidden theme-bg-app theme-text-main antialiased font-sans max-w-full relative selection:theme-bg-hover selection:theme-text-main">
       
       {/* CINEMATIC STARTUP SPLASH SCREEN WITH INTERACTIVE IMMERSIVE LAUNCHER */}
       <AnimatePresence mode="wait">
@@ -271,7 +288,7 @@ export default function App() {
 
       {/* OFFLINE RESUME MODAL POPUP */}
       {offlineProgressMsg && (
-        <div className="fixed inset-0 z-[90] bg-black/60 backdrop-blur-xl flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[90] theme-bg-app backdrop-blur-xl flex items-center justify-center p-4">
           <div className="theme-bg-card border theme-border p-8 rounded-[2rem] max-w-md w-full flex flex-col gap-6 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)]">
             <h3 className="text-xl font-black tracking-tighter theme-text-main flex items-center gap-3 uppercase">
               <Award size={24} />
@@ -283,7 +300,7 @@ export default function App() {
                 setOfflineProgressMsg(null);
                 if (store.soundEnabled) playClickSound('success');
               }}
-              className="theme-text-main border theme-border py-4 rounded-xl mt-4 cursor-pointer hover:bg-white/5 font-bold uppercase tracking-widest text-xs transition-all active:scale-[0.98]"
+              className="theme-text-main border theme-border py-4 rounded-xl mt-4 cursor-pointer hover:theme-bg-hover font-bold uppercase tracking-widest text-xs transition-all active:scale-[0.98]"
             >
               Resume Duties
             </button>
@@ -292,7 +309,7 @@ export default function App() {
       )}
 
       {/* AWWWARDS-STYLE SIDE NAVIGATION DOCK */}
-      <nav className="fixed md:static bottom-2 left-2 right-2 md:inset-y-0 md:left-0 z-50 md:w-28 md:h-screen bg-black/40 md:bg-transparent backdrop-blur-3xl md:backdrop-blur-none border border-white/5 md:border-none md:border-r theme-border rounded-[1.5rem] md:rounded-none flex flex-row md:flex-col items-center justify-between p-1.5 md:py-8 shadow-2xl md:shadow-none shrink-0">
+      <nav className="fixed md:static bottom-2 left-2 right-2 md:inset-y-0 md:left-0 z-50 md:w-28 md:h-screen theme-bg-app md:bg-transparent backdrop-blur-3xl md:backdrop-blur-none border theme-border md:border-none md:border-r theme-border rounded-[1.5rem] md:rounded-none flex flex-row md:flex-col items-center justify-between p-1.5 md:py-8 shadow-2xl md:shadow-none shrink-0">
         
         {/* Top items: Logo and Primary Tabs */}
         <div className="flex flex-row md:flex-col items-center gap-1 md:gap-6 w-full">
@@ -306,10 +323,10 @@ export default function App() {
               className={`p-2 sm:p-3 md:py-4 md:w-full rounded-xl sm:rounded-2xl flex flex-col items-center gap-1 sm:gap-2 text-xs font-bold uppercase tracking-widest cursor-pointer portal-tab-btn relative ${
                 activeTab === 'bonfire' 
                   ? 'portal-tab-btn-active scale-100' 
-                  : 'text-neutral-500 scale-95'
+                  : 'theme-text-muted scale-95'
               }`}
             >
-              <Sparkle size={18} className={activeTab === 'bonfire' ? 'text-emerald-400 animate-pulse' : 'text-neutral-400'} />
+              <Sparkle size={18} className={activeTab === 'bonfire' ? 'text-emerald-400 animate-pulse' : 'theme-text-muted'} />
               <span className="text-[9px] md:text-[10px] hidden md:block font-sans">Citadel</span>
               {activeTab === 'bonfire' && (
                 <div className="portal-tab-indicator absolute bottom-0 left-2 right-2 sm:left-4 sm:right-4 h-[2px] md:left-0 md:top-4 md:bottom-4 md:w-[3px] md:h-auto rounded-full" />
@@ -322,10 +339,10 @@ export default function App() {
                 className={`p-2 sm:p-3 md:py-4 md:w-full rounded-xl sm:rounded-2xl flex flex-col items-center gap-1 sm:gap-2 text-xs font-bold uppercase tracking-widest cursor-pointer portal-tab-btn relative ${
                   activeTab === 'town' 
                     ? 'portal-tab-btn-active scale-100' 
-                    : 'text-neutral-500 scale-95'
+                    : 'theme-text-muted scale-95'
                 }`}
               >
-                <Users size={18} className={activeTab === 'town' ? 'text-emerald-400 animate-pulse' : 'text-neutral-400'} />
+                <Users size={18} className={activeTab === 'town' ? 'text-emerald-400 animate-pulse' : 'theme-text-muted'} />
                 <span className="text-[9px] md:text-[10px] hidden md:block font-sans">Clone Bay</span>
                 {activeTab === 'town' && (
                   <div className="portal-tab-indicator absolute bottom-0 left-2 right-2 sm:left-4 sm:right-4 h-[2px] md:left-0 md:top-4 md:bottom-4 md:w-[3px] md:h-auto rounded-full" />
@@ -339,10 +356,10 @@ export default function App() {
                 className={`p-2 sm:p-3 md:py-4 md:w-full rounded-xl sm:rounded-2xl flex flex-col items-center gap-1 sm:gap-2 text-xs font-bold uppercase tracking-widest cursor-pointer portal-tab-btn relative ${
                   activeTab === 'science' 
                     ? 'portal-tab-btn-active scale-100' 
-                    : 'text-neutral-500 scale-95'
+                    : 'theme-text-muted scale-95'
                 }`}
               >
-                <FlaskConical size={18} className={activeTab === 'science' ? 'text-emerald-400 animate-pulse' : 'text-neutral-400'} />
+                <FlaskConical size={18} className={activeTab === 'science' ? 'text-emerald-400 animate-pulse' : 'theme-text-muted'} />
                 <span className="text-[9px] md:text-[10px] hidden md:block font-sans">Labs</span>
                 {activeTab === 'science' && (
                   <div className="portal-tab-indicator absolute bottom-0 left-2 right-2 sm:left-4 sm:right-4 h-[2px] md:left-0 md:top-4 md:bottom-4 md:w-[3px] md:h-auto rounded-full" />
@@ -356,10 +373,10 @@ export default function App() {
                 className={`p-2 sm:p-3 md:py-4 md:w-full rounded-xl sm:rounded-2xl flex flex-col items-center gap-1 sm:gap-2 text-xs font-bold uppercase tracking-widest cursor-pointer portal-tab-btn relative ${
                   activeTab === 'workshop' 
                     ? 'portal-tab-btn-active scale-100' 
-                    : 'text-neutral-500 scale-95'
+                    : 'theme-text-muted scale-95'
                 }`}
               >
-                <Hammer size={18} className={activeTab === 'workshop' ? 'text-emerald-400 animate-pulse' : 'text-neutral-400'} />
+                <Hammer size={18} className={activeTab === 'workshop' ? 'text-emerald-400 animate-pulse' : 'theme-text-muted'} />
                 <span className="text-[9px] md:text-[10px] hidden md:block font-sans">Refine</span>
                 {activeTab === 'workshop' && (
                   <div className="portal-tab-indicator absolute bottom-0 left-2 right-2 sm:left-4 sm:right-4 h-[2px] md:left-0 md:top-4 md:bottom-4 md:w-[3px] md:h-auto rounded-full" />
@@ -375,7 +392,7 @@ export default function App() {
                   : 'text-[#39ff14]/90 scale-95'
               }`}
             >
-              <Award size={18} className={activeTab === 'achievements' ? 'text-[#39ff14] animate-pulse' : 'text-neutral-400'} />
+              <Award size={18} className={activeTab === 'achievements' ? 'text-[#39ff14] animate-pulse' : 'theme-text-muted'} />
               <span className="text-[9px] md:text-[10px] hidden md:block font-sans">Badges</span>
               {activeTab === 'achievements' && (
                 <div className="portal-tab-indicator absolute bottom-0 left-2 right-2 sm:left-4 sm:right-4 h-[2px] md:left-0 md:top-4 md:bottom-4 md:w-[3px] md:h-auto rounded-full font-sans text-[#39ff14]/90" />
@@ -387,10 +404,10 @@ export default function App() {
               className={`p-2 sm:p-3 md:py-4 md:w-full rounded-xl sm:rounded-2xl flex flex-col items-center gap-1 sm:gap-2 text-xs font-bold uppercase tracking-widest cursor-pointer portal-tab-btn relative ${
                 activeTab === 'settings' 
                   ? 'portal-tab-btn-active scale-100' 
-                  : 'text-neutral-500 scale-95'
+                  : 'theme-text-muted scale-95'
               }`}
             >
-              <Settings2 size={18} className={activeTab === 'settings' ? 'text-emerald-400 animate-pulse' : 'text-neutral-400'} />
+              <Settings2 size={18} className={activeTab === 'settings' ? 'text-emerald-400 animate-pulse' : 'theme-text-muted'} />
               <span className="text-[9px] md:text-[10px] hidden md:block font-sans">Settings</span>
               {activeTab === 'settings' && (
                 <div className="portal-tab-indicator absolute bottom-0 left-2 right-2 sm:left-4 sm:right-4 h-[2px] md:left-0 md:top-4 md:bottom-4 md:w-[3px] md:h-auto rounded-full" />
@@ -403,20 +420,10 @@ export default function App() {
         <div className="flex flex-row md:flex-col items-center gap-3 md:gap-4 md:mt-auto pr-3 md:pr-0">
           <button
             onClick={() => {
-              const nextTheme = store.theme === 'dark' ? 'light' : 'dark';
-              store.setTheme(nextTheme);
-              if (store.soundEnabled) playClickSound('click');
-            }}
-            className="p-2.5 rounded-xl text-neutral-500 hover:text-neutral-300 transition-colors"
-          >
-            {store.theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
-          <button
-            onClick={() => {
               store.toggleSound();
               if (!store.soundEnabled) playClickSound('success');
             }}
-            className="p-2.5 rounded-xl text-neutral-500 hover:text-neutral-300 transition-colors hidden sm:block"
+            className="p-2.5 rounded-xl theme-text-muted hover:theme-text-sec transition-colors hidden sm:block"
           >
             {store.soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
           </button>
@@ -443,24 +450,29 @@ export default function App() {
              <div className="flex-1"></div>
 
              <div className="flex items-center gap-4 z-10">
+                <button
+                  onClick={() => {
+                    const nextTheme = store.theme === 'dark' || store.theme === 'trevor' ? 'light' : 'dark';
+                    store.setTheme(nextTheme);
+                    if (store.soundEnabled) playClickSound('click');
+                  }}
+                  className="p-2.5 rounded-xl theme-bg-card border theme-border theme-text-sec hover:theme-text-main transition-colors shadow-sm"
+                >
+                  {(store.theme === 'dark' || store.theme === 'trevor') ? <Sun size={18} /> : <Moon size={18} />}
+                </button>
+
                 <div className="flex items-center theme-bg-card border theme-border rounded-xl p-1 gap-1 shadow-sm backdrop-blur-md">
                   <button
                     onClick={() => { store.setGameSpeed(0); if (store.soundEnabled) playClickSound('click'); }}
-                    className={`p-2 rounded-lg cursor-pointer transition-all ${store.gameSpeed === 0 ? 'bg-white/10 text-white' : 'text-neutral-500 hover:text-neutral-300'}`}
+                    className={`p-2 rounded-lg cursor-pointer transition-all ${store.gameSpeed === 0 ? 'theme-bg-hover theme-text-main' : 'theme-text-muted hover:theme-text-sec'}`}
                   >
                     <Pause size={14} />
                   </button>
                   <button
                     onClick={() => { store.setGameSpeed(1); if (store.soundEnabled) playClickSound('click'); }}
-                    className={`px-3 py-1.5 text-xs rounded-lg font-black cursor-pointer transition-all ${store.gameSpeed === 1 ? 'bg-white/10 text-white shadow-sm' : 'text-neutral-500 hover:text-neutral-300'}`}
+                    className={`px-3 py-1.5 text-xs rounded-lg font-black cursor-pointer transition-all ${store.gameSpeed === 1 ? 'theme-bg-hover theme-text-main shadow-sm' : 'theme-text-muted hover:theme-text-sec'}`}
                   >
                     1X
-                  </button>
-                  <button
-                    onClick={() => { store.setGameSpeed(4); if (store.soundEnabled) playClickSound('success'); }}
-                    className={`px-3 py-1.5 text-xs rounded-lg font-black cursor-pointer transition-all ${store.gameSpeed === 4 ? 'bg-white/10 text-white shadow-sm' : 'text-neutral-500 hover:text-neutral-300'}`}
-                  >
-                    4X
                   </button>
                 </div>
              </div>
@@ -502,10 +514,10 @@ export default function App() {
                       {Math.ceil(store.activeAnomaly.durationLeft)}s Left
                     </span>
                   </div>
-                  <h4 className="text-lg font-black text-white uppercase tracking-tight mt-1 flex items-center gap-1.5">
+                  <h4 className="text-lg font-black theme-text-main uppercase tracking-tight mt-1 flex items-center gap-1.5">
                     {store.activeAnomaly.name}
                   </h4>
-                  <p className="text-neutral-400 text-xs font-medium max-w-sm mt-0.5">
+                  <p className="theme-text-muted text-xs font-medium max-w-sm mt-0.5">
                     {store.activeAnomaly.desc}
                   </p>
                 </div>
@@ -518,7 +530,7 @@ export default function App() {
                     store.defuseAnomalyClick();
                     if (store.soundEnabled) playClickSound('click');
                   }}
-                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-gradient-to-b from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 text-white font-black text-xs uppercase tracking-wider px-4 py-3 rounded-xl shadow-lg border border-red-400 transition-all cursor-pointer group"
+                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-gradient-to-b from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 theme-text-main font-black text-xs uppercase tracking-wider px-4 py-3 rounded-xl shadow-lg border border-red-400 transition-all cursor-pointer group"
                 >
                   <Hand size={14} className="group-hover:scale-125 transition-transform" />
                   Stabilize ({store.activeAnomaly.clicksMade}/{store.activeAnomaly.clicksRequired})
@@ -529,7 +541,7 @@ export default function App() {
                     if (store.soundEnabled) playClickSound('success');
                   }}
                   disabled={(store.resources.wood?.amount ?? 0) < 40}
-                  className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-40 disabled:hover:bg-neutral-900 border border-neutral-700 hover:border-neutral-500 text-white text-xs font-black uppercase tracking-wider px-4 py-3 rounded-xl transition-all cursor-pointer"
+                  className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 theme-bg-card hover:bg-neutral-800 disabled:opacity-40 disabled:hover:theme-bg-card border theme-border hover:border-neutral-500 theme-text-main text-xs font-black uppercase tracking-wider px-4 py-3 rounded-xl transition-all cursor-pointer"
                 >
                   <Zap size={14} className="text-yellow-400" />
                   Direct Shield (40 Plutonium)

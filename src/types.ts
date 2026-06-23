@@ -49,6 +49,12 @@ export type UpgradeType =
   | 'expandedStorage'
   | 'portalHeaters';
 
+export type PortalUpgradeType = 
+  | 'dimensionalAmplifier' 
+  | 'quantumResonator' 
+  | 'fluxAccelerator'
+  | 'chronalDilator';
+
 export type SeasonType = 'Spring' | 'Summer' | 'Autumn' | 'Winter';
 
 export interface Kitten {
@@ -127,7 +133,7 @@ export interface GameState {
   soundEnabled: boolean;
   lastTick: number;
   logs: GameLogMessage[];
-  theme: 'dark' | 'light';
+  theme: 'dark' | 'light' | 'trevor';
   buyMultiplier: 1 | 5 | 25;
   insaneMode: boolean;
   density: 'compact' | 'relaxed';
@@ -149,6 +155,9 @@ export interface GameState {
   portalResets: number;
   prestigeMultiplier: number;
 
+  // Portal Upgrades state
+  portalUpgrades: Record<PortalUpgradeType, number>;
+
   // Actions
   tick: (deltaSeconds: number) => void;
   gatherCatnip: (multiplier?: number) => void;
@@ -160,12 +169,13 @@ export interface GameState {
   unassignAll: () => void;
   researchScience: (type: ScienceType) => void;
   buyUpgrade: (type: UpgradeType) => void;
+  buyPortalUpgrade: (type: PortalUpgradeType) => void;
   forceAddKitten: () => void;
   portalReset: () => void;
   addLog: (text: string, type?: GameLogMessage['type']) => void;
   setGameSpeed: (speed: number) => void;
   toggleSound: () => void;
-  setTheme: (theme: 'dark' | 'light') => void;
+  setTheme: (theme: 'dark' | 'light' | 'trevor') => void;
   setBuyMultiplier: (multiplier: 1 | 5 | 25) => void;
   synthesizeCertificate: (certificateType: 'bronze' | 'silver' | 'gold' | 'infinite') => void;
   toggleInsaneMode: () => void;

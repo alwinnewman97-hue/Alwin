@@ -147,7 +147,7 @@ export default function ResourcePanel({
                   isCompact ? 'py-0.5 px-2 text-[9px]' : 'py-1 px-2.5'
                 } ${
                   (store.buyMultiplier || 1) === m
-                    ? 'theme-text-main bg-white/10 shadow-sm'
+                    ? 'theme-text-main theme-bg-hover shadow-sm'
                     : 'theme-text-muted hover:theme-text-sec'
                 }`}
               >
@@ -157,7 +157,7 @@ export default function ResourcePanel({
           </div>
         </div>
 
-        <div className={`bg-white/5 mx-1 hidden sm:block shrink-0 transition-all duration-300 ${
+        <div className={`theme-bg-hover mx-1 hidden sm:block shrink-0 transition-all duration-300 ${
           isCompact ? 'w-px h-8' : 'w-px h-10'
         }`}></div>
 
@@ -165,21 +165,21 @@ export default function ResourcePanel({
         <div className="flex items-stretch gap-1.5 shrink-0 py-0.5 h-full font-sans">
           <button
             onClick={handleManualGather}
-            className={`theme-bg-card hover:bg-white/5 border theme-border flex flex-col items-center justify-center transition-all cursor-pointer shadow-sm ${
+            className={`theme-bg-card hover:theme-bg-hover border theme-border flex flex-col items-center justify-center transition-all cursor-pointer shadow-sm ${
               isCompact 
                 ? 'px-2.5 py-1.5 rounded-lg gap-1.0 text-2xs min-w-[62px]' 
                 : 'px-4 py-2 rounded-xl gap-1.5 text-xs min-w-[72px]'
             }`}
           >
             <Leaf size={isCompact ? 12 : 14} className="text-emerald-400" />
-            <span className="text-[9px] font-bold uppercase tracking-widest text-neutral-400">Harvest</span>
+            <span className="text-[9px] font-bold uppercase tracking-widest theme-text-muted">Harvest</span>
           </button>
 
           {store.unlocks.wood && (
             <button
               onClick={handleManualRefine}
               disabled={(store.resources.catnip?.amount ?? 0) < 100}
-              className={`theme-bg-card hover:bg-white/5 border theme-border flex flex-col items-center justify-center transition-all cursor-pointer shadow-sm disabled:opacity-30 disabled:cursor-not-allowed ${
+              className={`theme-bg-card hover:theme-bg-hover border theme-border flex flex-col items-center justify-center transition-all cursor-pointer shadow-sm disabled:opacity-30 disabled:cursor-not-allowed ${
                 isCompact 
                   ? 'px-2.5 py-1.5 rounded-lg gap-1.0 text-2xs min-w-[62px]' 
                   : 'px-4 py-2 rounded-xl gap-1.5 text-xs min-w-[72px]'
@@ -187,7 +187,7 @@ export default function ResourcePanel({
               title="Refine 100 Mega Seeds into 1 Plutonium"
             >
               <Zap size={isCompact ? 12 : 14} className="text-amber-400" />
-              <span className="text-[9px] font-bold uppercase tracking-widest text-neutral-400">Refine</span>
+              <span className="text-[9px] font-bold uppercase tracking-widest theme-text-muted">Refine</span>
             </button>
           )}
         </div>
@@ -244,7 +244,7 @@ export default function ResourcePanel({
                   </div>
                   
                   {showLimit && (
-                    <div className="w-full h-0.5 bg-white/5 rounded-full overflow-hidden">
+                    <div className="w-full h-0.5 theme-bg-hover rounded-full overflow-hidden">
                       <div 
                         className={`h-full transition-all duration-300 rounded-full ${
                           percent >= 100 ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]' : percent >= 90 ? 'bg-amber-300/80' : 'theme-bg-main bg-neutral-400'
@@ -273,10 +273,10 @@ export default function ResourcePanel({
               <div key={id} className={`flex flex-col justify-between border-l border-dashed theme-border h-full shrink-0 transition-all duration-300 ${
                 isCompact ? 'py-0.5 px-1.5 sm:px-2' : 'py-1 px-2.5 sm:px-3'
               }`}>
-                <span className={`font-bold uppercase tracking-wider text-neutral-500 mt-0.5 hidden sm:block ${
+                <span className={`font-bold uppercase tracking-wider theme-text-muted mt-0.5 hidden sm:block ${
                   isCompact ? 'text-[9px] mb-1' : 'text-[10px] mb-2'
                 }`}>{labelMap[id] || id}</span>
-                <span className="text-2xs font-bold uppercase text-neutral-500 sm:hidden block leading-none mb-1">{id === 'parchment' ? 'Form.' : labelMap[id] ? labelMap[id].split('-')[1] || labelMap[id].split(' ')[1] || labelMap[id].substring(0, 5) : id}</span>
+                <span className="text-2xs font-bold uppercase theme-text-muted sm:hidden block leading-none mb-1">{id === 'parchment' ? 'Form.' : labelMap[id] ? labelMap[id].split('-')[1] || labelMap[id].split(' ')[1] || labelMap[id].substring(0, 5) : id}</span>
                 <span className={`font-bold theme-text-main font-mono leading-none mt-auto mb-1 transition-all duration-300 ${
                   isCompact ? 'text-xs xl:text-sm' : 'text-sm xl:text-base'
                 }`}>

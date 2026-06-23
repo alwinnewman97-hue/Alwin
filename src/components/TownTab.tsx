@@ -75,25 +75,25 @@ export default function TownTab({ store }: TownTabProps) {
     <div className="flex flex-col flex-1 pb-10">
       
       {/* COMPACT TOWN HUD */}
-      <div className={`flex justify-between items-center border-b border-white/5 transition-all duration-300 ${
+      <div className={`flex justify-between items-center border-b theme-border transition-all duration-300 ${
         isCompact ? 'pb-3 mx-2 mt-2 gap-2' : 'pb-6 mx-2 sm:mx-6 mt-4'
       }`}>
-        <span className={`uppercase font-bold text-neutral-500 tracking-widest leading-none ${
+        <span className={`uppercase font-bold theme-text-muted tracking-widest leading-none ${
           isCompact ? 'text-[9px]' : 'text-[10px]'
         }`}>Clone Command Centre</span>
         <div className={`flex flex-wrap items-center gap-y-2 text-sm select-none transition-all ${
           isCompact ? 'gap-x-4 text-xs' : 'gap-x-6'
         }`}>
           <div className="flex items-center gap-2 font-mono theme-text-main leading-none">
-            <Users size={isCompact ? 12 : 14} className="text-neutral-500" />
-            <span>{kittens.length}<span className="text-neutral-600">/{maxKittens}</span></span>
+            <Users size={isCompact ? 12 : 14} className="theme-text-muted" />
+            <span>{kittens.length}<span className="theme-text-muted opacity-50">/{maxKittens}</span></span>
           </div>
 
-          <div className="flex items-center gap-2 text-neutral-500 font-mono leading-none">
+          <div className="flex items-center gap-2 theme-text-muted font-mono leading-none">
             <span>Moraly: {store.village.happiness}%</span>
           </div>
 
-          <div className={`font-mono leading-none ${freeKittens > 0 ? 'text-cyan-400 font-bold' : 'text-neutral-600'}`}>
+          <div className={`font-mono leading-none ${freeKittens > 0 ? 'text-cyan-400 font-bold' : 'theme-text-muted opacity-50'}`}>
             Idle: {freeKittens}
           </div>
         </div>
@@ -109,7 +109,7 @@ export default function TownTab({ store }: TownTabProps) {
               store.forceAddKitten();
               if (store.soundEnabled) playClickSound('success');
             }}
-            className={`uppercase tracking-widest font-bold theme-text-main bg-white/10 hover:bg-white/20 rounded-full transition-all active:scale-95 cursor-pointer ${
+            className={`uppercase tracking-widest font-bold theme-text-main theme-bg-hover hover:theme-bg-panel rounded-full transition-all active:scale-95 cursor-pointer ${
               isCompact ? 'text-[9px] px-4 py-2' : 'text-[10px] px-6 py-3'
             }`}
           >
@@ -120,7 +120,7 @@ export default function TownTab({ store }: TownTabProps) {
         {kittens.length > 0 && freeKittens < kittens.length && (
           <button
             onClick={handleUnassignAll}
-            className={`uppercase tracking-widest font-bold text-neutral-500 border border-white/10 hover:text-white rounded-full transition-colors cursor-pointer ${
+            className={`uppercase tracking-widest font-bold theme-text-muted border theme-border hover:theme-text-main rounded-full transition-colors cursor-pointer ${
               isCompact ? 'text-[9px] px-4 py-2' : 'text-[10px] px-6 py-3'
             }`}
           >
@@ -143,7 +143,7 @@ export default function TownTab({ store }: TownTabProps) {
           return (
             <div 
               key={id}
-              className={`flex flex-col justify-between transition-all duration-300 border theme-border hover:border-white/40 theme-bg-card/50 backdrop-blur-md ${
+              className={`flex flex-col justify-between transition-all duration-300 border theme-border hover:theme-border theme-bg-card/50 backdrop-blur-md ${
                 isCompact ? 'p-3.5 gap-2.5' : 'p-5 lg:p-6 gap-4'
               }`}
             >
@@ -158,7 +158,7 @@ export default function TownTab({ store }: TownTabProps) {
                         isCompact ? 'text-sm' : 'text-lg'
                       }`}>{job.name}</span>
                       {count > 0 && (
-                        <span className={`font-mono font-bold bg-white text-black leading-none rounded-sm ${
+                        <span className={`font-mono font-bold theme-accent-bg leading-none rounded-sm ${
                           isCompact ? 'px-1.5 py-0.5 text-[9px]' : 'px-2 py-0.5 text-[10px]'
                         }`}>
                           {count}
@@ -179,7 +179,7 @@ export default function TownTab({ store }: TownTabProps) {
                   <button 
                     onClick={() => handleUnassignMultiple(id, store.buyMultiplier || 1)}
                     disabled={count === 0}
-                    className={`flex items-center justify-center bg-transparent border border-white/20 text-white hover:bg-white/10 disabled:opacity-20 rounded-full active:scale-95 transition-all cursor-pointer ${
+                    className={`flex items-center justify-center bg-transparent border theme-border theme-text-main hover:theme-bg-hover disabled:opacity-20 rounded-full active:scale-95 transition-all cursor-pointer ${
                       isCompact ? 'w-8 h-8' : 'w-10 h-10'
                     }`}
                   >
@@ -188,7 +188,7 @@ export default function TownTab({ store }: TownTabProps) {
 
                   <button 
                     onClick={() => handleAutoAssign(id)}
-                    className={`flex items-center justify-center uppercase font-bold text-neutral-500 hover:text-white transition-colors cursor-pointer ${
+                    className={`flex items-center justify-center uppercase font-bold theme-text-muted hover:theme-text-main transition-colors cursor-pointer ${
                       isCompact ? 'px-2 h-8 text-[9px]' : 'px-3 h-10 text-[10px]'
                     }`}
                   >
@@ -198,7 +198,7 @@ export default function TownTab({ store }: TownTabProps) {
                   <button 
                     onClick={() => handleAssignMultiple(id, store.buyMultiplier || 1)}
                     disabled={freeKittens === 0}
-                    className={`flex items-center justify-center bg-transparent border border-white/20 text-white hover:bg-white/10 disabled:opacity-20 rounded-full active:scale-95 transition-all cursor-pointer ${
+                    className={`flex items-center justify-center bg-transparent border theme-border theme-text-main hover:theme-bg-hover disabled:opacity-20 rounded-full active:scale-95 transition-all cursor-pointer ${
                       isCompact ? 'w-8 h-8' : 'w-10 h-10'
                     }`}
                   >
@@ -214,19 +214,19 @@ export default function TownTab({ store }: TownTabProps) {
       {/* INDIVIDUAL KITTENS POPULATION MATRIX */}
       {kittens.length > 0 && (
         <div className="mt-12 mx-2 sm:mx-6 select-none animate-fadeIn">
-          <span className="text-[10px] uppercase font-bold text-neutral-500 tracking-widest leading-none block mb-6">Portal Clone Directory</span>
+          <span className="text-[10px] uppercase font-bold theme-text-muted tracking-widest leading-none block mb-6">Portal Clone Directory</span>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-fadeIn">
             {kittens.map((kitten) => (
               <div 
                 key={kitten.id}
-                className="p-4 border border-white/5 hover:border-white/20 transition-colors bg-white/[0.02] flex flex-col justify-between gap-4"
+                className="p-4 border theme-border hover:theme-border-active transition-colors theme-bg-card flex flex-col justify-between gap-4"
               >
                 <div className="min-w-0">
-                  <span className="font-bold text-sm tracking-wide theme-text-main block truncate leading-tight mb-1.5 text-neutral-200">
+                  <span className="font-bold text-sm tracking-wide theme-text-main block truncate leading-tight mb-1.5">
                     {kitten.name} {kitten.surname}
                   </span>
-                  <span className="text-[10px] text-neutral-500 font-mono truncate block uppercase">
+                  <span className="text-[10px] theme-text-muted font-mono truncate block uppercase">
                     GEN {kitten.level} • {kitten.trait}
                   </span>
                 </div>
@@ -235,7 +235,7 @@ export default function TownTab({ store }: TownTabProps) {
                 <select
                   value={kitten.job}
                   onChange={(e) => handleAssignJob(kitten.id, e.target.value as any)}
-                  className="bg-black border border-white/10 text-white text-[11px] px-3 py-2 shrink-0 focus:outline-none focus:border-white/40 cursor-pointer font-sans"
+                  className="theme-bg-app border theme-border theme-text-main text-[11px] px-3 py-2 shrink-0 focus:outline-none focus:theme-border cursor-pointer font-sans"
                 >
                   <option value="unemployed">💤 Idle</option>
                   <option value="farmer">🌱 Mega-Seed Cultivator</option>

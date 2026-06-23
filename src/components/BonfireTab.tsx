@@ -75,7 +75,7 @@ export default function BonfireTab({ store }: BonfireTabProps) {
       case 'storage': return { color: 'text-purple-400', border: 'border-purple-500/20', bg: 'bg-purple-500/5', label: 'Containment' };
       case 'residential': return { color: 'text-amber-400', border: 'border-amber-500/20', bg: 'bg-amber-500/5', label: 'Clones' };
       case 'scientific': return { color: 'text-cyan-400', border: 'border-cyan-500/20', bg: 'bg-cyan-500/5', label: 'Cybernetics' };
-      default: return { color: 'text-[#39ff14]', border: 'border-white/10', bg: 'bg-white/5', label: 'All Units' };
+      default: return { color: 'text-[#39ff14]', border: 'theme-border', bg: 'theme-bg-hover', label: 'All Units' };
     }
   };
 
@@ -141,10 +141,10 @@ export default function BonfireTab({ store }: BonfireTabProps) {
                     className={`w-full py-2.5 px-3 rounded-lg flex items-center gap-3 transition-all text-2xs uppercase tracking-wider cursor-pointer font-bold select-none text-left ${
                       isActive 
                         ? 'theme-bg-card border theme-border theme-text-sec' 
-                        : 'text-neutral-500 hover:text-neutral-300 hover:bg-black/10 dark:hover:bg-white/5 border border-transparent'
+                        : 'theme-text-muted hover:theme-text-sec hover:theme-bg-app dark:hover:theme-bg-hover border border-transparent'
                     }`}
                   >
-                    <Icon size={12} className={isActive ? 'theme-text-sec' : 'text-neutral-500'} />
+                    <Icon size={12} className={isActive ? 'theme-text-sec' : 'theme-text-muted'} />
                     <span className={isActive ? 'theme-text-main font-black' : ''}>{cat.name}</span>
                   </button>
                 );
@@ -197,11 +197,11 @@ export default function BonfireTab({ store }: BonfireTabProps) {
                 key={res} 
                 className={`text-[10px] font-mono px-2 py-0.5 rounded border flex items-center gap-1 ${
                   isAffordable 
-                    ? 'bg-neutral-900/40 text-[#39ff14] border-emerald-950/40' 
+                    ? 'theme-bg-card text-[#39ff14] border-emerald-950/40' 
                     : 'bg-red-950/10 text-red-400 border-red-900/20'
                 }`}
               >
-                <span className="text-neutral-500">{resourceLabelMap[res] || res}:</span>
+                <span className="theme-text-muted">{resourceLabelMap[res] || res}:</span>
                 <span className="font-bold">{Math.ceil(totalCost).toLocaleString()}</span>
               </span>
             );
@@ -210,31 +210,31 @@ export default function BonfireTab({ store }: BonfireTabProps) {
           return (
             <div 
               key={id}
-              className={`flex flex-col justify-between transition-all duration-300 border rounded-xl bg-neutral-950/20 backdrop-blur-sm relative ${
+              className={`flex flex-col justify-between transition-all duration-300 border rounded-xl theme-bg-panel backdrop-blur-sm relative ${
                 isCompact ? 'p-3.5 gap-2.5' : 'p-5 gap-4'
               } ${
                 canAfford 
-                  ? 'border-neutral-900 hover:border-neutral-700/65 shadow-sm' 
-                  : 'border-white/5 opacity-70'
+                  ? 'border-neutral-900 hover:theme-border/65 shadow-sm' 
+                  : 'theme-border opacity-70'
               }`}
             >
               <div className={`flex flex-col ${isCompact ? 'gap-1' : 'gap-2'}`}>
                 <div className="flex justify-between items-start gap-2">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <h4 className={`font-bold text-white tracking-wide transition-all ${
+                    <h4 className={`font-bold theme-text-main tracking-wide transition-all ${
                       isCompact ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'
                     }`}>
                       {b.name}
                     </h4>
                     {count > 0 && (
-                      <span className={`font-mono font-bold bg-neutral-900 text-[#39ff14] border border-emerald-900/30 rounded ${
+                      <span className={`font-mono font-bold theme-bg-card text-[#39ff14] border border-emerald-900/30 rounded ${
                         isCompact ? 'px-1 py-0.1 text-[8px]' : 'px-1.5 py-0.2 text-[9px]'
                       }`}>
                         x{count}{b.maxLimit !== undefined ? ` / ${b.maxLimit}` : ''}
                       </span>
                     )}
                     {count === 0 && b.maxLimit !== undefined && (
-                      <span className={`font-mono font-bold bg-neutral-900 text-neutral-400 border border-neutral-900/50 rounded ${
+                      <span className={`font-mono font-bold theme-bg-card theme-text-muted border border-neutral-900/50 rounded ${
                         isCompact ? 'px-1 py-0.1 text-[8px]' : 'px-1.5 py-0.2 text-[9px]'
                       }`}>
                         0 / {b.maxLimit}
@@ -248,14 +248,14 @@ export default function BonfireTab({ store }: BonfireTabProps) {
                   </span>
                 </div>
 
-                <p className={`text-neutral-400 font-sans leading-relaxed hidden sm:block transition-all ${
+                <p className={`theme-text-muted font-sans leading-relaxed hidden sm:block transition-all ${
                   isCompact ? 'text-[11px] leading-snug mt-0.5' : 'text-xs'
                 }`}>
                   {b.desc}
                 </p>
 
                 {/* Calibrated Benefits Pill */}
-                <div className={`flex items-center gap-1 text-neutral-300 font-mono transition-all ${
+                <div className={`flex items-center gap-1 theme-text-sec font-mono transition-all ${
                   isCompact ? 'mt-0.5 text-[9px]' : 'mt-1 text-[10px]'
                 }`}>
                   <span className="w-1 h-1 rounded-full bg-emerald-400 shrink-0" />
@@ -278,8 +278,8 @@ export default function BonfireTab({ store }: BonfireTabProps) {
                     isCompact ? 'py-1.5 text-[10px]' : 'py-2 text-2xs'
                   } ${
                     canAfford 
-                      ? 'bg-white text-black hover:bg-neutral-100 font-extrabold shadow-sm' 
-                      : 'bg-white/5 border border-white/5 text-white/20 disabled:cursor-not-allowed font-medium'
+                      ? 'theme-accent-bg hover:opacity-90 font-extrabold shadow-sm' 
+                      : 'theme-bg-hover border theme-border theme-text-muted disabled:cursor-not-allowed font-medium'
                   }`}
                 >
                   <Plus size={12} />

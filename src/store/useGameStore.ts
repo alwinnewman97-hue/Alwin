@@ -7,12 +7,13 @@ import {
   JobType, 
   ScienceType, 
   UpgradeType, 
+  PortalUpgradeType,
   SeasonType, 
   Kitten, 
   GameLogMessage,
   ActiveCertificateBoost
 } from '../types';
-import { BUILDINGS, SCIENCES, JOBS, UPGRADES, SEASONS_DATA, generateRandomKitten } from '../gameData';
+import { BUILDINGS, SCIENCES, JOBS, UPGRADES, PORTAL_UPGRADES, SEASONS_DATA, generateRandomKitten } from '../gameData';
 import { ACHIEVEMENTS } from '../utils/achievements';
 
 export interface CertificateDef {
@@ -228,6 +229,12 @@ export const useGameStore = create<GameState>()(
       },
       portalResets: 0,
       prestigeMultiplier: 1.0,
+      portalUpgrades: {
+        dimensionalAmplifier: 0,
+        quantumResonator: 0,
+        fluxAccelerator: 0,
+        chronalDilator: 0,
+      },
 
       addLog: (text: string, type: GameLogMessage['type'] = 'info') => {
         const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -251,7 +258,7 @@ export const useGameStore = create<GameState>()(
 
       setGameSpeed: (speed: number) => set({ gameSpeed: speed }),
       toggleSound: () => set(state => ({ soundEnabled: !state.soundEnabled })),
-      setTheme: (theme: 'dark' | 'light') => set({ theme }),
+      setTheme: (theme: 'dark' | 'light' | 'trevor') => set({ theme }),
       setBuyMultiplier: (multiplier: 1 | 5 | 25) => set({ buyMultiplier: multiplier }),
 
       tick: (deltaSeconds: number) => {
@@ -284,8 +291,10 @@ export const useGameStore = create<GameState>()(
 
         if (state.gameSpeed === 0) return; // paused
 
-        // Incorporate game speed multiplier
-        const effectiveDelta = deltaSeconds * state.gameSpeed * 1.5; // slight speed-up to make incremental play feel super responsive
+        // Incorporate game speed and portal upgrades multipliers
+        const chronalDilatorLevel = state.portalUpgrades?.chronalDilator ?? 0;
+        const chronalMultiplier = 1 + (chronalDilatorLevel * 0.10);
+        const effectiveDelta = deltaSeconds * state.gameSpeed * 1.5 * chronalMultiplier; // slight speed-up to make incremental play feel super responsive
         const now = Date.now();
 
         // Count down active certificates
@@ -308,7 +317,9 @@ export const useGameStore = create<GameState>()(
         const totalBoost = updatedActive.reduce((acc, cert) => acc + cert.boostPercent, 0);
         const certificateMultiplier = 1 + totalBoost;
         const portalFluxMultiplier = 1 + (state.portalFlux * 0.1);
-        let productionMultiplier = certificateMultiplier * portalFluxMultiplier;
+        const dimAmplifierLevel = state.portalUpgrades?.dimensionalAmplifier ?? 0;
+        const dimensionalMultiplier = 1 + (dimAmplifierLevel * 0.15);
+        let productionMultiplier = certificateMultiplier * portalFluxMultiplier * dimensionalMultiplier;
 
         // Anomaly tracking and processing
         let activeAnomaly = state.activeAnomaly ? { ...state.activeAnomaly } : null;
@@ -405,6 +416,14 @@ export const useGameStore = create<GameState>()(
         let maxMinerals = (state.buildings.barn * 250 * barnMultiplier) + (state.buildings.warehouse * 500 * warehouseMultiplier);
         let maxIron = (state.buildings.barn * 50 * barnMultiplier) + (state.buildings.warehouse * 150 * warehouseMultiplier);
         let maxScience = (state.buildings.library * 250) + (state.buildings.academy * 1000) + (state.buildings.warehouse * 100 * warehouseMultiplier);
+
+        const fluxAcceleratorLevel = state.portalUpgrades?.fluxAccelerator ?? 0;
+        const storageMultiplier = 1 + (fluxAcceleratorLevel * 0.20);
+        maxCatnip *= storageMultiplier;
+        maxWood *= storageMultiplier;
+        maxMinerals *= storageMultiplier;
+        maxIron *= storageMultiplier;
+        maxScience *= storageMultiplier;
 
         if (microverseDecayActive) {
           maxCatnip *= 0.5;
@@ -527,7 +546,9 @@ export const useGameStore = create<GameState>()(
         // Libraries & academies boost scholars
         const academyScholarMod = 1 + (state.buildings.academy * 0.20);
         const writingScholarBonus = state.researched.writing ? 1.25 : 1.0;
-        let scienceRate = jobStrengths.scholar * 0.25 * academyScholarMod * efficiencyFactor * productionMultiplier * writingScholarBonus;
+        const quantumResonatorLevel = state.portalUpgrades?.quantumResonator ?? 0;
+        const scholarResonatorMultiplier = 1 + (quantumResonatorLevel * 0.25);
+        let scienceRate = jobStrengths.scholar * 0.25 * academyScholarMod * efficiencyFactor * productionMultiplier * writingScholarBonus * scholarResonatorMultiplier;
 
         // MINER boosted by mining (Laser Fault-Drilling) research
         const miningMinerBonus = state.researched.mining ? 1.20 : 1.0;
@@ -1080,6 +1101,39 @@ export const useGameStore = create<GameState>()(
         return state;
       }),
 
+      buyPortalUpgrade: (type) => set(state => {
+        const portalUpgrades = state.portalUpgrades || {
+          dimensionalAmplifier: 0,
+          quantumResonator: 0,
+          fluxAccelerator: 0,
+          chronalDilator: 0,
+        };
+        const currentLevel = portalUpgrades[type] ?? 0;
+        const def = PORTAL_UPGRADES[type];
+        if (!def) return state;
+
+        const cost = Math.floor(def.baseCost * Math.pow(def.costRatio, currentLevel));
+        const currentScience = state.resources.science.amount;
+
+        if (currentScience >= cost) {
+          const res = JSON.parse(JSON.stringify(state.resources)) as GameState['resources'];
+          res.science.amount -= cost;
+
+          state.addLog(`Portal Upgrade Calibrated: ${def.name} reached Level ${currentLevel + 1}!`, 'success');
+
+          return {
+            resources: res,
+            portalUpgrades: {
+              ...portalUpgrades,
+              [type]: currentLevel + 1
+            }
+          };
+        } else {
+          state.addLog(`Insufficient Portal Tech! Required: ${cost.toLocaleString()} to upgrade ${def.name}.`, 'warn');
+        }
+        return state;
+      }),
+
       forceAddKitten: () => set(state => {
          // cheat / manual recruiter
          const maxKittens = (state.buildings.hut * 2) + (state.buildings.logHouse * 1) + (state.buildings.mansion * 4);
@@ -1339,6 +1393,14 @@ export const useGameStore = create<GameState>()(
         const mergedCraftedCertificatesCount = persistedState.craftedCertificatesCount || { bronze: 0, silver: 0, gold: 0, infinite: 0 };
         const mergedAchievements = persistedState.achievements || {};
 
+        const mergedPortalUpgrades = {
+          dimensionalAmplifier: 0,
+          quantumResonator: 0,
+          fluxAccelerator: 0,
+          chronalDilator: 0,
+          ...(persistedState.portalUpgrades || {})
+        };
+
         return {
           ...currentState,
           ...persistedState,
@@ -1351,6 +1413,7 @@ export const useGameStore = create<GameState>()(
           activeCertificates: mergedActiveCertificates,
           craftedCertificatesCount: mergedCraftedCertificatesCount,
           achievements: mergedAchievements,
+          portalUpgrades: mergedPortalUpgrades,
           theme: persistedState.theme === 'light' ? 'light' : 'dark',
           density: (persistedState.density === 'compact' || persistedState.density === 'relaxed') ? persistedState.density : 'relaxed',
           buyMultiplier: (persistedState.buyMultiplier === 1 || persistedState.buyMultiplier === 5 || persistedState.buyMultiplier === 25) 

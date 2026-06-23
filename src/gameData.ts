@@ -4,7 +4,8 @@ import {
   ScienceType, 
   UpgradeType, 
   SeasonType, 
-  ResourceType 
+  ResourceType,
+  PortalUpgradeType
 } from './types';
 
 export interface BuildingDef {
@@ -331,5 +332,44 @@ export const SEASONS_DATA: Record<SeasonType, {
     catnipModifier: 0.15, // severe penalty
     desc: 'A candy-coated nightmare dimension frozen by cryogenic rifts. Grenhouses freeze up (-85%)! Rely on vault storage.',
     color: 'blue'
+  }
+};
+
+export interface PortalUpgradeDef {
+  name: string;
+  desc: string;
+  baseCost: number; // cost in science
+  costRatio: number;
+  effectsDesc: string;
+}
+
+export const PORTAL_UPGRADES: Record<PortalUpgradeType, PortalUpgradeDef> = {
+  dimensionalAmplifier: {
+    name: 'Dimensional Signal Amplifier',
+    desc: 'Calibrates multi-dimensional receivers to amplify overall clone work motivation.',
+    baseCost: 150,
+    costRatio: 1.6,
+    effectsDesc: '+15% global job productivity multiplier per level'
+  },
+  quantumResonator: {
+    name: 'Quantum Synaptic Resonator',
+    desc: 'Syncs Scholar minds using dark energy fields to accelerate technology research speeds.',
+    baseCost: 200,
+    costRatio: 1.7,
+    effectsDesc: '+25% Scholar Morty research rate per level'
+  },
+  fluxAccelerator: {
+    name: 'Flux Compression Buffer',
+    desc: 'Optimizes spatial folding matrices inside storage barns and depots.',
+    baseCost: 250,
+    costRatio: 1.8,
+    effectsDesc: '+20% maximum storage capacity for all resources per level'
+  },
+  chronalDilator: {
+    name: 'Chronal Dilation Matrix',
+    desc: 'Slightly warps local spacetime to tick production engines faster.',
+    baseCost: 400,
+    costRatio: 2.0,
+    effectsDesc: '+10% passive production speed per level'
   }
 };
