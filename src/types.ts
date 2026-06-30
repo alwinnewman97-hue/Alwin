@@ -55,7 +55,9 @@ export type UpgradeType =
   | 'expandedStorage'
   | 'portalHeaters'
   | 'darkMatterContainment'
-  | 'fluidTanks';
+  | 'fluidTanks'
+  | 'autoRefineWood'
+  | 'autoRefineMinerals';
 
 export type PortalUpgradeType = 
   | 'dimensionalAmplifier' 
@@ -168,6 +170,11 @@ export interface GameState {
   portalResets: number;
   prestigeMultiplier: number;
 
+  // QoL settings
+  essentialJobs: Record<JobType, boolean>;
+  smartAssignRatios: Record<JobType, number>;
+  smartAssignMode: 'dynamic' | 'custom';
+
   // Portal Upgrades state
   portalUpgrades: Record<PortalUpgradeType, number>;
 
@@ -196,4 +203,7 @@ export interface GameState {
   defuseAnomalyClick: () => void;
   defuseAnomalyInstant: () => void;
   toggleAutoBuild: (type: 'pasture' | 'barn' | 'catnipField') => void;
+  toggleEssentialJob: (job: JobType) => void;
+  setSmartAssignRatio: (job: JobType, ratio: number) => void;
+  setSmartAssignMode: (mode: 'dynamic' | 'custom') => void;
 }

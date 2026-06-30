@@ -73,6 +73,8 @@ export default function UpgradesTab({ store }: UpgradesTabProps) {
               if (id === 'expandedStorage' && !store.researched.metalworking) return null;
               if (id === 'darkMatterContainment' && !store.researched.darkMatterPhysics) return null;
               if (id === 'fluidTanks' && !store.researched.fluidDynamics) return null;
+              if (id === 'autoRefineWood' && !store.unlocks.workshop) return null;
+              if (id === 'autoRefineMinerals' && !store.upgrades.autoRefineWood) return null;
 
               let canAfford = true;
               const costsList = Object.entries(u.cost).map(([res, costVal]) => {

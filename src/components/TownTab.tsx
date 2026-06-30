@@ -10,7 +10,13 @@ import {
   Minus, 
   Users, 
   Briefcase, 
-  Sparkles
+  Sparkles,
+  SlidersHorizontal,
+  Lock,
+  Unlock,
+  ChevronDown,
+  ChevronUp,
+  RefreshCw
 } from 'lucide-react';
 
 interface TownTabProps {
@@ -21,6 +27,7 @@ export default function TownTab({ store }: TownTabProps) {
   const kittens = Array.isArray(store.village?.kittens) ? store.village.kittens : [];
   const maxKittens = store.village?.maxKittens || 0;
   const isCompact = store.density === 'compact';
+  const [settingsOpen, setSettingsOpen] = React.useState(false);
 
   const jobCounts: Record<JobType | 'unemployed', number> = {
     farmer: 0,
@@ -73,76 +80,70 @@ export default function TownTab({ store }: TownTabProps) {
     if (store.soundEnabled) playClickSound('click');
   };
 
-  const handleSmartAssign = () => {
-    const idleKittens = kittens.filter(k => k.job === 'unemployed');
-    if (idleKittens.length === 0) return;
+  const runSmartAssign = (idleKittensList: typeof kittens) => {
+    if (idleKittensList.length === 0) return;
 
-    // 1. Define active job keys and whether they are unlocked
     const availableJobs: { job: JobType; score: number }[] = [];
+    const jobTypes: JobType[] = ['farmer', 'woodcutter', 'scholar', 'miner', 'priest', 'darkMatterScientist', 'fluidEngineer'];
 
-    // Catnip / Farmer check
-    const catnipAmt = store.resources.catnip.amount;
-    const catnipMax = store.resources.catnip.max || 1000;
-    const catnipRatio = catnipAmt / catnipMax;
-    // If food is low, or we have very few kittens and need to secure food
-    let farmerScore = 0;
-    if (catnipRatio < 0.2 || catnipAmt < 300) {
-      farmerScore = 2.5 * (1 - catnipRatio);
-    } else {
-      farmerScore = 0.15 * (1 - catnipRatio);
-    }
-    availableJobs.push({ job: 'farmer', score: farmerScore });
+    jobTypes.forEach(jobId => {
+      // Check if job is unlocked
+      if (jobId === 'miner' && !store.unlocks.minerals) return;
+      if (jobId === 'scholar' && store.buildings.library === 0) return;
+      if (jobId === 'priest' && (!store.unlocks.culture || store.buildings.amphitheatre === 0)) return;
+      if (jobId === 'darkMatterScientist' && !store.unlocks.darkMatter) return;
+      if (jobId === 'fluidEngineer' && !store.unlocks.fluid) return;
 
-    // Wood / Woodcutter
-    const woodRatio = store.resources.wood.amount / (store.resources.wood.max || 1000);
-    availableJobs.push({ job: 'woodcutter', score: 1.2 * (1 - woodRatio) });
+      let score = 0;
+      if (store.smartAssignMode === 'custom') {
+        score = store.smartAssignRatios?.[jobId] ?? 1;
+      } else {
+        // Dynamic Bottleneck Optimizer mode
+        if (jobId === 'farmer') {
+          const catnipAmt = store.resources.catnip.amount;
+          const catnipMax = store.resources.catnip.max || 1000;
+          const catnipRatio = catnipAmt / catnipMax;
+          if (catnipRatio < 0.2 || catnipAmt < 300) {
+            score = 2.5 * (1 - catnipRatio);
+          } else {
+            score = 0.15 * (1 - catnipRatio);
+          }
+        } else if (jobId === 'woodcutter') {
+          const woodRatio = store.resources.wood.amount / (store.resources.wood.max || 1000);
+          score = 1.2 * (1 - woodRatio);
+        } else if (jobId === 'miner') {
+          const mineralsRatio = store.resources.minerals.amount / (store.resources.minerals.max || 1000);
+          score = 1.4 * (1 - mineralsRatio);
+        } else if (jobId === 'scholar') {
+          const scienceRatio = store.resources.science.amount / (store.resources.science.max || 1000);
+          score = 1.0 * (1 - scienceRatio);
+        } else if (jobId === 'priest') {
+          const cultureRatio = store.resources.culture.amount / (store.resources.culture.max || 100000);
+          score = 0.8 * (1 - cultureRatio);
+        } else if (jobId === 'darkMatterScientist') {
+          const dmRatio = store.resources.darkMatter.amount / (store.resources.darkMatter.max || 1000);
+          score = 1.6 * (1 - dmRatio);
+        } else if (jobId === 'fluidEngineer') {
+          const fluidRatio = store.resources.portalFluid.amount / (store.resources.portalFluid.max || 1000);
+          score = 1.8 * (1 - fluidRatio);
+        }
+      }
 
-    // Minerals / Miner
-    if (store.unlocks.minerals) {
-      const mineralsRatio = store.resources.minerals.amount / (store.resources.minerals.max || 1000);
-      availableJobs.push({ job: 'miner', score: 1.4 * (1 - mineralsRatio) });
-    }
+      availableJobs.push({ job: jobId, score });
+    });
 
-    // Science / Scholar
-    if (store.buildings.library > 0) {
-      const scienceRatio = store.resources.science.amount / (store.resources.science.max || 1000);
-      availableJobs.push({ job: 'scholar', score: 1.0 * (1 - scienceRatio) });
-    }
-
-    // Culture / Priest
-    if (store.unlocks.culture && store.buildings.amphitheatre > 0) {
-      const cultureRatio = store.resources.culture.amount / (store.resources.culture.max || 100000);
-      availableJobs.push({ job: 'priest', score: 0.8 * (1 - cultureRatio) });
-    }
-
-    // Dark Matter / Scientist
-    if (store.unlocks.darkMatter) {
-      const dmRatio = store.resources.darkMatter.amount / (store.resources.darkMatter.max || 1000);
-      availableJobs.push({ job: 'darkMatterScientist', score: 1.6 * (1 - dmRatio) });
-    }
-
-    // Fluid / Engineer
-    if (store.unlocks.fluid) {
-      const fluidRatio = store.resources.portalFluid.amount / (store.resources.portalFluid.max || 1000);
-      availableJobs.push({ job: 'fluidEngineer', score: 1.8 * (1 - fluidRatio) });
-    }
-
-    // 2. Sum of all scores
     const totalScore = availableJobs.reduce((sum, j) => sum + j.score, 0);
 
     if (totalScore <= 0) {
-      // Fallback: distribute evenly among basic unlocked jobs
+      // Fallback: distribute evenly
       const count = availableJobs.length;
-      idleKittens.forEach((k, idx) => {
+      idleKittensList.forEach((k, idx) => {
         const jobToAssign = availableJobs[idx % count].job;
         store.assignJob(k.id, jobToAssign);
       });
-      if (store.soundEnabled) playClickSound('success');
       return;
     }
 
-    // 3. Allocate clones
-    let assignedCount = 0;
     const assignments: Record<JobType, string[]> = {
       farmer: [],
       woodcutter: [],
@@ -153,9 +154,9 @@ export default function TownTab({ store }: TownTabProps) {
       fluidEngineer: []
     };
 
-    // Calculate ideal share
+    let assignedCount = 0;
     const jobsWithShares = availableJobs.map(j => {
-      const idealShare = (j.score / totalScore) * idleKittens.length;
+      const idealShare = (j.score / totalScore) * idleKittensList.length;
       return {
         job: j.job,
         idealShare,
@@ -167,8 +168,8 @@ export default function TownTab({ store }: TownTabProps) {
     jobsWithShares.forEach(js => {
       const toAssign = js.floorShare;
       for (let i = 0; i < toAssign; i++) {
-        if (assignedCount < idleKittens.length) {
-          assignments[js.job].push(idleKittens[assignedCount].id);
+        if (assignedCount < idleKittensList.length) {
+          assignments[js.job].push(idleKittensList[assignedCount].id);
           assignedCount++;
         }
       }
@@ -180,18 +181,43 @@ export default function TownTab({ store }: TownTabProps) {
       .sort((a, b) => b.rem - a.rem);
 
     for (let i = 0; i < remainders.length; i++) {
-      if (assignedCount >= idleKittens.length) break;
-      assignments[remainders[i].job].push(idleKittens[assignedCount].id);
+      if (assignedCount >= idleKittensList.length) break;
+      assignments[remainders[i].job].push(idleKittensList[assignedCount].id);
       assignedCount++;
     }
 
-    // 4. Batch assign in store
+    // Batch assign in store
     Object.entries(assignments).forEach(([job, ids]) => {
       if (ids.length > 0) {
         store.assignJobsMultiple(ids, job as JobType);
       }
     });
+  };
 
+  const handleSmartAssign = () => {
+    const idleKittens = kittens.filter(k => k.job === 'unemployed');
+    if (idleKittens.length === 0) return;
+    runSmartAssign(idleKittens);
+    if (store.soundEnabled) playClickSound('success');
+  };
+
+  const handleFullRebalance = () => {
+    const essentialJobs = store.essentialJobs || {};
+    // Unassign all non-essential clones
+    const toUnassign = kittens.filter(k => k.job !== 'unemployed' && !essentialJobs[k.job]);
+    if (toUnassign.length > 0) {
+      store.assignJobsMultiple(toUnassign.map(k => k.id), 'unemployed');
+    }
+
+    // Combine currently idle and newly unassigned clones
+    const allIdleKittens = [
+      ...kittens.filter(k => k.job === 'unemployed'),
+      ...toUnassign
+    ];
+
+    if (allIdleKittens.length > 0) {
+      runSmartAssign(allIdleKittens);
+    }
     if (store.soundEnabled) playClickSound('success');
   };
 
@@ -269,6 +295,150 @@ export default function TownTab({ store }: TownTabProps) {
           </button>
         )}
       </div>
+
+      {/* AUTO-ASSIGNER SETTINGS AND AUTOMATION HUB */}
+      {kittens.length > 0 && (
+        <div className={`mb-6 border theme-border rounded-xl theme-bg-card/30 backdrop-blur-md overflow-hidden transition-all duration-300 mx-2 ${
+          isCompact ? 'p-3' : 'p-5 sm:p-6'
+        }`}>
+          <div className="flex justify-between items-center cursor-pointer select-none" onClick={() => setSettingsOpen(!settingsOpen)}>
+            <div className="flex items-center gap-3">
+              <SlidersHorizontal size={isCompact ? 14 : 18} className="text-cyan-400" />
+              <div className="flex flex-col">
+                <span className={`font-bold theme-text-main leading-tight ${isCompact ? 'text-xs' : 'text-sm'}`}>Auto-Assigner & Smart Settings</span>
+                <span className="text-[10px] theme-text-muted">Configure job priorities, target ratios, and essential job locks</span>
+              </div>
+            </div>
+            <div className="theme-text-muted hover:theme-text-main transition-colors">
+              {settingsOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </div>
+          </div>
+
+          {settingsOpen && (
+            <div className="mt-4 pt-4 border-t theme-border flex flex-col gap-4">
+              {/* MODE TOGGLES */}
+              <div className="flex flex-col gap-1.5 pb-2 border-b theme-border">
+                <span className="text-[10px] uppercase tracking-wider font-bold theme-text-muted">Optimization Mode</span>
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                  <button
+                    onClick={() => store.setSmartAssignMode('dynamic')}
+                    className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
+                      store.smartAssignMode === 'dynamic'
+                        ? 'bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border-cyan-500/40 text-cyan-400'
+                        : 'theme-border theme-text-muted hover:theme-text-main hover:theme-bg-panel'
+                    }`}
+                  >
+                    <Sparkles size={13} />
+                    <span>Dynamic Bottleneck</span>
+                  </button>
+                  <button
+                    onClick={() => store.setSmartAssignMode('custom')}
+                    className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
+                      store.smartAssignMode === 'custom'
+                        ? 'bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/40 text-purple-400'
+                        : 'theme-border theme-text-muted hover:theme-text-main hover:theme-bg-panel'
+                    }`}
+                  >
+                    <SlidersHorizontal size={13} />
+                    <span>Custom Target Ratios</span>
+                  </button>
+                </div>
+                <p className="text-[10px] theme-text-muted mt-1">
+                  {store.smartAssignMode === 'dynamic'
+                    ? '🧬 Automatically balances and assigns clones based on real-time resource deficits and storage capacities to prevent wasted production.'
+                    : '📐 Allocates unemployed clones strictly in proportion to the custom job weights you configure below.'}
+                </p>
+              </div>
+
+              {/* TARGET RATIOS GRID */}
+              <div className="flex flex-col gap-2">
+                <span className="text-[10px] uppercase tracking-wider font-bold theme-text-muted">Job Weights & Locks</span>
+                <div className="flex flex-col gap-2.5">
+                  {(Object.entries(JOBS) as [JobType, typeof JOBS[JobType]][]).map(([jobId, jobDef]) => {
+                    // Check if unlocked
+                    if (jobId === 'miner' && !store.unlocks.minerals) return null;
+                    if (jobId === 'scholar' && store.buildings.library === 0) return null;
+                    if (jobId === 'priest' && (!store.unlocks.culture || store.buildings.amphitheatre === 0)) return null;
+                    if (jobId === 'darkMatterScientist' && !store.unlocks.darkMatter) return null;
+                    if (jobId === 'fluidEngineer' && !store.unlocks.fluid) return null;
+
+                    const currentWeight = store.smartAssignRatios?.[jobId] ?? 1;
+                    const isEssential = store.essentialJobs?.[jobId] ?? false;
+
+                    return (
+                      <div key={jobId} className="flex items-center justify-between gap-3 bg-slate-950/20 border theme-border rounded-lg p-2.5 hover:bg-slate-950/40 transition-all">
+                        <div className="flex flex-col min-w-[100px]">
+                          <span className="text-xs font-bold theme-text-main">{jobDef.name}</span>
+                          <span className="text-[10px] theme-text-muted leading-none">Current: {jobCounts[jobId] || 0} Clones</span>
+                        </div>
+
+                        {/* WEIGHT CONTROL */}
+                        <div className="flex items-center gap-2">
+                          <button
+                            disabled={currentWeight <= 0}
+                            onClick={() => {
+                              store.setSmartAssignRatio(jobId, Math.max(0, currentWeight - 1));
+                              if (store.soundEnabled) playClickSound('click');
+                            }}
+                            className={`p-1 rounded theme-bg-hover hover:theme-bg-panel text-slate-400 hover:theme-text-main transition-colors ${
+                              currentWeight <= 0 ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'
+                            }`}
+                          >
+                            <Minus size={12} />
+                          </button>
+                          <div className="flex flex-col items-center justify-center min-w-[24px]">
+                            <span className="text-xs font-mono font-bold theme-text-main">{currentWeight}</span>
+                            <span className="text-[8px] theme-text-muted">weight</span>
+                          </div>
+                          <button
+                            disabled={currentWeight >= 10}
+                            onClick={() => {
+                              store.setSmartAssignRatio(jobId, Math.min(10, currentWeight + 1));
+                              if (store.soundEnabled) playClickSound('click');
+                            }}
+                            className={`p-1 rounded theme-bg-hover hover:theme-bg-panel text-slate-400 hover:theme-text-main transition-colors ${
+                              currentWeight >= 10 ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'
+                            }`}
+                          >
+                            <Plus size={12} />
+                          </button>
+                        </div>
+
+                        {/* ESSENTIAL LOCK BUTTON */}
+                        <button
+                          onClick={() => {
+                            store.toggleEssentialJob(jobId);
+                            if (store.soundEnabled) playClickSound('click');
+                          }}
+                          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                            isEssential
+                              ? 'bg-amber-500/10 border-amber-500/30 text-amber-500 hover:bg-amber-500/20 shadow-[0_0_8px_rgba(245,158,11,0.15)]'
+                              : 'border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700'
+                          }`}
+                        >
+                          {isEssential ? <Lock size={10} /> : <Unlock size={10} />}
+                          <span>{isEssential ? 'Essential' : 'Lock'}</span>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* COMMAND BUTTONS */}
+              <div className="flex gap-2 pt-2 mt-1 border-t theme-border">
+                <button
+                  onClick={handleFullRebalance}
+                  className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500/10 to-orange-500/10 hover:from-amber-500/20 hover:to-orange-500/20 text-amber-400 border border-amber-500/30 font-bold uppercase tracking-wider text-[10px] py-2 px-4 rounded-lg cursor-pointer transition-all active:scale-95"
+                >
+                  <RefreshCw size={12} />
+                  <span>Full Rebalance Workforce</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* JOBS SECTION */}
       <div className={`grid grid-cols-1 md:grid-cols-2 transition-all duration-300 ${

@@ -138,7 +138,29 @@ const BASE_UPGRADES: Record<UpgradeType, boolean> = {
   expandedStorage: false,
   portalHeaters: false,
   darkMatterContainment: false,
-  fluidTanks: false
+  fluidTanks: false,
+  autoRefineWood: false,
+  autoRefineMinerals: false
+};
+
+const BASE_ESSENTIAL_JOBS: Record<JobType, boolean> = {
+  farmer: false,
+  woodcutter: false,
+  scholar: false,
+  miner: false,
+  priest: false,
+  darkMatterScientist: false,
+  fluidEngineer: false
+};
+
+const BASE_SMART_ASSIGN_RATIOS: Record<JobType, number> = {
+  farmer: 1,
+  woodcutter: 1,
+  scholar: 1,
+  miner: 1,
+  priest: 1,
+  darkMatterScientist: 1,
+  fluidEngineer: 1
 };
 
 export const calculateCost = (baseCost: number, ratio: number, amount: number) => {
@@ -201,6 +223,9 @@ export const useGameStore = create<GameState>()(
       buildings: BASE_BUILDINGS,
       researched: BASE_RESEARCHED,
       upgrades: BASE_UPGRADES,
+      essentialJobs: BASE_ESSENTIAL_JOBS,
+      smartAssignRatios: BASE_SMART_ASSIGN_RATIOS,
+      smartAssignMode: 'dynamic',
       village: {
         kittens: [],
         maxKittens: 0,
@@ -313,26 +338,37 @@ export const useGameStore = create<GameState>()(
         // ----------------------------------------
         // SEASONAL CALENDAR SYSTEM
         // ----------------------------------------
-        let dayProgress = (state.dayProgress !== undefined ? state.dayProgress : 0) + effectiveDelta;
-        let day = state.day !== undefined ? state.day : 1;
-        let season = state.season !== undefined ? state.season : 'spring';
-        let year = state.year !== undefined ? state.year : 1;
-
+        // ----------------------------------------
+        // CALENDAR & SEASONAL LOGIC (Synced with System Time)
+        // ----------------------------------------
+        const nowInSeconds = Date.now() / 1000;
+        
+        // Use a fixed epoch for year 1 to make it a bit more reasonable than Year 4000+
+        // Jan 1st 2024 is approximately 1704067200
+        const EPOCH_OFFSET_SEC = 1704067200; 
+        const secondsSinceEpoch = Math.max(0, nowInSeconds - EPOCH_OFFSET_SEC);
+        const absoluteDaySinceEpoch = Math.floor(secondsSinceEpoch / DAY_DURATION_IN_GAME_SEC);
+        
+        const year = Math.floor(absoluteDaySinceEpoch / 160) + 1;
+        const dayOfYear = absoluteDaySinceEpoch % 160;
         const seasonSequence: ('spring' | 'summer' | 'autumn' | 'winter')[] = ['spring', 'summer', 'autumn', 'winter'];
-        const seasonalLogs: GameLogMessage[] = [];
+        const seasonIdx = Math.floor(dayOfYear / 40);
+        const season = seasonSequence[seasonIdx];
+        const day = (dayOfYear % 40) + 1;
+        const dayProgress = secondsSinceEpoch % DAY_DURATION_IN_GAME_SEC;
 
-        while (dayProgress >= DAY_DURATION_IN_GAME_SEC) {
-          dayProgress -= DAY_DURATION_IN_GAME_SEC;
-          day += 1;
-          if (day > 40) {
-            day = 1;
-            const currentIdx = seasonSequence.indexOf(season);
-            const nextIdx = (currentIdx + 1) % 4;
-            season = seasonSequence[nextIdx];
-            
-            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const seasonalLogs: GameLogMessage[] = [];
+        const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+        // Detect transitions between ticks
+        const prevDay = state.day || 1;
+        const prevSeason = state.season || 'spring';
+        const prevYear = state.year || 1;
+
+        if (day !== prevDay || season !== prevSeason || year !== prevYear) {
+          // A transition occurred
+          if (season !== prevSeason) {
             if (season === 'spring') {
-              year += 1;
               seasonalLogs.push({
                 id: `season-spring-${year}-${Math.random()}`,
                 time: timeStr,
@@ -355,58 +391,57 @@ export const useGameStore = create<GameState>()(
             }
           }
 
-          const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-          // Seasonal festival / event triggers
-          if (season === 'spring' && day === 10) {
+          // Seasonal festival / event triggers (only log if we just hit the exact day)
+          if (season === 'spring' && day === 10 && (prevDay !== 10 || prevSeason !== 'spring')) {
             seasonalLogs.push({
               id: `fest-spring-start-${Math.random()}`,
               time: timeStr,
               text: `🌸 Festival Started: "Citadel Spring Break"! Mortys are ecstatic! (+20% Happiness, +15% Job Speed for 5 days)`,
               type: 'success'
             });
-          } else if (season === 'spring' && day === 15) {
+          } else if (season === 'spring' && day === 15 && (prevDay !== 15 || prevSeason !== 'spring')) {
             seasonalLogs.push({
               id: `fest-spring-end-${Math.random()}`,
               time: timeStr,
               text: `🌸 "Citadel Spring Break" festival has ended. Back to research!`,
               type: 'info'
             });
-          } else if (season === 'summer' && day === 20) {
+          } else if (season === 'summer' && day === 20 && (prevDay !== 20 || prevSeason !== 'summer')) {
             seasonalLogs.push({
               id: `fest-summer-start-${Math.random()}`,
               time: timeStr,
               text: `🔥 Event Started: "Solar Purge"! Intense radiation doubles Plutonium scrap yield, but warning of spatial anomalies!`,
               type: 'warn'
             });
-          } else if (season === 'summer' && day === 23) {
+          } else if (season === 'summer' && day === 23 && (prevDay !== 23 || prevSeason !== 'summer')) {
             seasonalLogs.push({
               id: `fest-summer-end-${Math.random()}`,
               time: timeStr,
               text: `🔥 "Solar Purge" radiation has subsided. Plutonium scrap rates return to normal.`,
               type: 'info'
             });
-          } else if (season === 'autumn' && day === 15) {
+          } else if (season === 'autumn' && day === 15 && (prevDay !== 15 || prevSeason !== 'autumn')) {
             seasonalLogs.push({
               id: `fest-autumn-start-${Math.random()}`,
               time: timeStr,
               text: `🍁 Event Started: "The Great Seed Harvest"! Botanical clones gather +50% extra Mega Seeds!`,
               type: 'success'
             });
-          } else if (season === 'autumn' && day === 20) {
+          } else if (season === 'autumn' && day === 20 && (prevDay !== 20 || prevSeason !== 'autumn')) {
             seasonalLogs.push({
               id: `fest-autumn-end-${Math.random()}`,
               time: timeStr,
               text: `🍁 "The Great Seed Harvest" has concluded.`,
               type: 'info'
             });
-          } else if (season === 'winter' && day === 25) {
+          } else if (season === 'winter' && day === 25 && (prevDay !== 25 || prevSeason !== 'winter')) {
             seasonalLogs.push({
               id: `fest-winter-start-${Math.random()}`,
               time: timeStr,
               text: `🎁 Holiday Event: "Cromulon Gift-giving"! The giant heads are pleased. +30% Science and Culture generation!`,
               type: 'success'
             });
-          } else if (season === 'winter' && day === 30) {
+          } else if (season === 'winter' && day === 30 && (prevDay !== 30 || prevSeason !== 'winter')) {
             seasonalLogs.push({
               id: `fest-winter-end-${Math.random()}`,
               time: timeStr,
@@ -777,6 +812,30 @@ export const useGameStore = create<GameState>()(
             mineralsAmt *= 0.70;
             ironAmt *= 0.70;
             scienceAmt *= 0.70;
+          }
+        }
+
+        // Auto-refinement of Plutonium (Wood) and Crystals (Minerals) when reaching 95% of storage limits
+        if (state.upgrades.autoRefineWood && woodAmt > maxWood * 0.95) {
+          const excessWood = woodAmt - (maxWood * 0.95);
+          // Convert excess wood to iron (Ratio: 10 wood -> 1 iron)
+          const ironGained = excessWood / 10;
+          woodAmt = maxWood * 0.95;
+          ironAmt = Math.min(maxIron, ironAmt + ironGained);
+        }
+
+        if (mineralsAmt > maxMinerals * 0.95) {
+          const excessMinerals = mineralsAmt - (maxMinerals * 0.95);
+          if (state.upgrades.autoRefineMinerals) {
+            // Priority 1: Convert excess minerals to science (Ratio: 5 minerals -> 1 science)
+            const scienceGained = excessMinerals / 5;
+            mineralsAmt = maxMinerals * 0.95;
+            scienceAmt = Math.min(maxScience, scienceAmt + scienceGained);
+          } else if (state.upgrades.autoRefineWood) {
+            // Priority 2: Convert excess minerals to iron (Ratio: 10 minerals -> 1 iron)
+            const ironGained = excessMinerals / 10;
+            mineralsAmt = maxMinerals * 0.95;
+            ironAmt = Math.min(maxIron, ironAmt + ironGained);
           }
         }
 
@@ -1190,7 +1249,13 @@ export const useGameStore = create<GameState>()(
 
       unassignAll: () => set(state => {
         const kittensList = Array.isArray(state.village?.kittens) ? state.village.kittens : [];
-        const kittens = kittensList.map(k => ({ ...k, job: 'unemployed' as const }));
+        const essentialJobs = state.essentialJobs || BASE_ESSENTIAL_JOBS;
+        const kittens = kittensList.map(k => {
+          if (k.job !== 'unemployed' && essentialJobs[k.job]) {
+            return k; // Protect essential jobs from being unassigned
+          }
+          return { ...k, job: 'unemployed' as const };
+        });
         return {
           village: {
             ...state.village,
@@ -1483,7 +1548,29 @@ export const useGameStore = create<GameState>()(
         window.location.reload();
       },
 
-      setDensity: (density: 'compact' | 'relaxed') => set({ density })
+      setDensity: (density: 'compact' | 'relaxed') => set({ density }),
+
+      toggleEssentialJob: (job) => set(state => {
+        const essentialJobs = state.essentialJobs || BASE_ESSENTIAL_JOBS;
+        return {
+          essentialJobs: {
+            ...essentialJobs,
+            [job]: !essentialJobs[job]
+          }
+        };
+      }),
+
+      setSmartAssignRatio: (job, ratio) => set(state => {
+        const smartAssignRatios = state.smartAssignRatios || BASE_SMART_ASSIGN_RATIOS;
+        return {
+          smartAssignRatios: {
+            ...smartAssignRatios,
+            [job]: ratio
+          }
+        };
+      }),
+
+      setSmartAssignMode: (mode) => set({ smartAssignMode: mode })
     }),
     {
       name: 'rick-and-morty-incremental-storage',
@@ -1582,6 +1669,16 @@ export const useGameStore = create<GameState>()(
         const mergedCraftedCertificatesCount = persistedState.craftedCertificatesCount || { bronze: 0, silver: 0, gold: 0, infinite: 0 };
         const mergedAchievements = persistedState.achievements || {};
 
+        const mergedEssentialJobs = {
+          ...BASE_ESSENTIAL_JOBS,
+          ...(persistedState.essentialJobs || {})
+        };
+
+        const mergedSmartAssignRatios = {
+          ...BASE_SMART_ASSIGN_RATIOS,
+          ...(persistedState.smartAssignRatios || {})
+        };
+
         const mergedPortalUpgrades = {
           dimensionalAmplifier: 0,
           quantumResonator: 0,
@@ -1600,6 +1697,9 @@ export const useGameStore = create<GameState>()(
           autoBuild: mergedAutoBuild,
           unlocks: mergedUnlocks,
           village: mergedVillage,
+          essentialJobs: mergedEssentialJobs,
+          smartAssignRatios: mergedSmartAssignRatios,
+          smartAssignMode: persistedState.smartAssignMode === 'custom' ? 'custom' : 'dynamic',
           activeCertificates: mergedActiveCertificates,
           craftedCertificatesCount: mergedCraftedCertificatesCount,
           achievements: mergedAchievements,

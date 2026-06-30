@@ -319,6 +319,18 @@ export const UPGRADES: Record<UpgradeType, UpgradeDef> = {
     desc: 'Hyper-pressurized glass silos for portal fluid.',
     cost: { science: 5000, darkMatter: 500 },
     effectsDesc: 'Increases Portal Fluid storage by +250'
+  },
+  autoRefineWood: {
+    name: 'Auto-Smelting Core',
+    desc: 'Intelligent furnace attachment that automatically smelts 95%-capped Plutonium (Wood) and Crystals (Minerals) into Neutrium (Iron).',
+    cost: { science: 600, iron: 50 },
+    effectsDesc: 'Automatically converts 95%-overflow Plutonium/Crystals to Neutrium (Iron).'
+  },
+  autoRefineMinerals: {
+    name: 'Quantum Tech Pipeline',
+    desc: 'Automated crystal resonant laser that converts 95%-overflow Crystals (Minerals) directly into digital Portal Tech (Science).',
+    cost: { science: 1000, wood: 400 },
+    effectsDesc: 'Automatically converts 95%-overflow Crystals (Minerals) to Portal Tech (Science).'
   }
 };
 
