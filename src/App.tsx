@@ -151,8 +151,9 @@ export default function App() {
   const portalFluxMultiplier = 1 + store.portalFlux * 0.1;
   const dimAmplifierLevel = store.portalUpgrades?.dimensionalAmplifier ?? 0;
   const dimensionalMultiplier = 1 + dimAmplifierLevel * 0.15;
+  // Use exact 1x multiplier from useGameStore.ts tick
   let productionMultiplier =
-    certificateMultiplier * portalFluxMultiplier * dimensionalMultiplier;
+    certificateMultiplier * portalFluxMultiplier * dimensionalMultiplier * 1;
 
   if (store.insaneMode) {
     productionMultiplier *= 0.65;
@@ -160,6 +161,14 @@ export default function App() {
   if (store.activeAnomaly?.type === "fed_raid") {
     productionMultiplier *= 0.5;
   }
+
+  // Active event helpers matching useGameStore.ts
+  const season = store.season;
+  const day = store.day;
+  const isSpringBreak = season === 'spring' && day >= 10 && day < 15;
+  const isSolarPurge = season === 'summer' && day >= 20 && day < 23;
+  const isSeedHarvest = season === 'autumn' && day >= 15 && day < 20;
+  const isCromulonGifts = season === 'winter' && day >= 25 && day < 30;
 
   // Rates formulas mirror store tick perfectly for pixel-perfect UI synchronization
   const farmerEffBonus = store.researched.agriculture ? 1.2 : 1.0;
@@ -179,18 +188,29 @@ export default function App() {
 
   const aqueductBoost = 1 + store.buildings.aqueduct * 0.15;
 
+  // Seasonal Farming effects
+  let seasonCropMultiplier = 1.0;
+  if (season === 'spring') seasonCropMultiplier = 1.25;
+  else if (season === 'summer') seasonCropMultiplier = 1.0;
+  else if (season === 'autumn') seasonCropMultiplier = isSeedHarvest ? 1.50 : 0.75;
+  else if (season === 'winter') {
+    seasonCropMultiplier = store.upgrades.portalHeaters ? 0.65 : 0.20;
+  }
+
   const fieldsPassiveRate =
     store.buildings.catnipField *
     0.63 *
     dimensionModifier *
     aqueductBoost *
-    agricultureGreenhouseBonus;
+    agricultureGreenhouseBonus *
+    seasonCropMultiplier;
   const farmerRateValue =
     jobStrengths.farmer *
     5.0 *
     farmerEffBonus *
     dimensionModifier *
-    productionMultiplier;
+    productionMultiplier *
+    seasonCropMultiplier;
 
   const pastureIntakeReduction = Math.max(
     0.5,
@@ -215,6 +235,10 @@ export default function App() {
 
   const efficiencyFactor = store.village.happiness / 100;
 
+  const springBreakFactor = isSpringBreak ? 1.15 : 1.0;
+  const solarPurgeFactor = isSolarPurge ? 2.0 : 1.0;
+  const cromulonGiftsFactor = isCromulonGifts ? 1.30 : 1.0;
+
   const woodworkingWoodcutterBonus = store.researched.woodworking ? 1.15 : 1.0;
   let computedWoodRate =
     jobStrengths.woodcutter *
@@ -222,7 +246,9 @@ export default function App() {
     axeMultiplier *
     efficiencyFactor *
     productionMultiplier *
-    woodworkingWoodcutterBonus;
+    woodworkingWoodcutterBonus *
+    springBreakFactor *
+    solarPurgeFactor;
 
   const miningMinerBonus = store.researched.mining ? 1.2 : 1.0;
   let computedMineralsRate =
@@ -230,7 +256,8 @@ export default function App() {
       0.18 *
       efficiencyFactor *
       productionMultiplier *
-      miningMinerBonus +
+      miningMinerBonus *
+      springBreakFactor +
     store.buildings.mine * 0.05 * miningMinerBonus;
   let computedIronRate = 0;
 
@@ -239,8 +266,8 @@ export default function App() {
     const smeltersCount = store.buildings.smelter;
     // Smelters consume raw mats to output iron
     if (
-      (store.resources.wood?.amount ?? 0) > 1 &&
-      (store.resources.minerals?.amount ?? 0) > 10
+      (store.resources.wood?.amount ?? 0) > 0 &&
+      (store.resources.minerals?.amount ?? 0) > 0
     ) {
       computedWoodRate -= smeltersCount * 1.0;
       computedMineralsRate -= smeltersCount * 10.0;
@@ -267,7 +294,9 @@ export default function App() {
     efficiencyFactor *
     productionMultiplier *
     writingScholarBonus *
-    scholarResonatorMultiplier;
+    scholarResonatorMultiplier *
+    springBreakFactor *
+    cromulonGiftsFactor;
 
   const theologyPriestBonus = store.researched.theology ? 1.4 : 1.0;
   let computedCultureRate =
@@ -275,7 +304,9 @@ export default function App() {
     0.15 *
     efficiencyFactor *
     productionMultiplier *
-    theologyPriestBonus;
+    theologyPriestBonus *
+    springBreakFactor *
+    cromulonGiftsFactor;
 
   if (store.activeAnomaly?.type === "cromulon") {
     computedCultureRate -= 4.0;

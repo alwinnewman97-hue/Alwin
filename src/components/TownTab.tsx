@@ -73,6 +73,128 @@ export default function TownTab({ store }: TownTabProps) {
     if (store.soundEnabled) playClickSound('click');
   };
 
+  const handleSmartAssign = () => {
+    const idleKittens = kittens.filter(k => k.job === 'unemployed');
+    if (idleKittens.length === 0) return;
+
+    // 1. Define active job keys and whether they are unlocked
+    const availableJobs: { job: JobType; score: number }[] = [];
+
+    // Catnip / Farmer check
+    const catnipAmt = store.resources.catnip.amount;
+    const catnipMax = store.resources.catnip.max || 1000;
+    const catnipRatio = catnipAmt / catnipMax;
+    // If food is low, or we have very few kittens and need to secure food
+    let farmerScore = 0;
+    if (catnipRatio < 0.2 || catnipAmt < 300) {
+      farmerScore = 2.5 * (1 - catnipRatio);
+    } else {
+      farmerScore = 0.15 * (1 - catnipRatio);
+    }
+    availableJobs.push({ job: 'farmer', score: farmerScore });
+
+    // Wood / Woodcutter
+    const woodRatio = store.resources.wood.amount / (store.resources.wood.max || 1000);
+    availableJobs.push({ job: 'woodcutter', score: 1.2 * (1 - woodRatio) });
+
+    // Minerals / Miner
+    if (store.unlocks.minerals) {
+      const mineralsRatio = store.resources.minerals.amount / (store.resources.minerals.max || 1000);
+      availableJobs.push({ job: 'miner', score: 1.4 * (1 - mineralsRatio) });
+    }
+
+    // Science / Scholar
+    if (store.buildings.library > 0) {
+      const scienceRatio = store.resources.science.amount / (store.resources.science.max || 1000);
+      availableJobs.push({ job: 'scholar', score: 1.0 * (1 - scienceRatio) });
+    }
+
+    // Culture / Priest
+    if (store.unlocks.culture && store.buildings.amphitheatre > 0) {
+      const cultureRatio = store.resources.culture.amount / (store.resources.culture.max || 100000);
+      availableJobs.push({ job: 'priest', score: 0.8 * (1 - cultureRatio) });
+    }
+
+    // Dark Matter / Scientist
+    if (store.unlocks.darkMatter) {
+      const dmRatio = store.resources.darkMatter.amount / (store.resources.darkMatter.max || 1000);
+      availableJobs.push({ job: 'darkMatterScientist', score: 1.6 * (1 - dmRatio) });
+    }
+
+    // Fluid / Engineer
+    if (store.unlocks.fluid) {
+      const fluidRatio = store.resources.portalFluid.amount / (store.resources.portalFluid.max || 1000);
+      availableJobs.push({ job: 'fluidEngineer', score: 1.8 * (1 - fluidRatio) });
+    }
+
+    // 2. Sum of all scores
+    const totalScore = availableJobs.reduce((sum, j) => sum + j.score, 0);
+
+    if (totalScore <= 0) {
+      // Fallback: distribute evenly among basic unlocked jobs
+      const count = availableJobs.length;
+      idleKittens.forEach((k, idx) => {
+        const jobToAssign = availableJobs[idx % count].job;
+        store.assignJob(k.id, jobToAssign);
+      });
+      if (store.soundEnabled) playClickSound('success');
+      return;
+    }
+
+    // 3. Allocate clones
+    let assignedCount = 0;
+    const assignments: Record<JobType, string[]> = {
+      farmer: [],
+      woodcutter: [],
+      scholar: [],
+      miner: [],
+      priest: [],
+      darkMatterScientist: [],
+      fluidEngineer: []
+    };
+
+    // Calculate ideal share
+    const jobsWithShares = availableJobs.map(j => {
+      const idealShare = (j.score / totalScore) * idleKittens.length;
+      return {
+        job: j.job,
+        idealShare,
+        floorShare: Math.floor(idealShare)
+      };
+    });
+
+    // First pass: assign the floor count
+    jobsWithShares.forEach(js => {
+      const toAssign = js.floorShare;
+      for (let i = 0; i < toAssign; i++) {
+        if (assignedCount < idleKittens.length) {
+          assignments[js.job].push(idleKittens[assignedCount].id);
+          assignedCount++;
+        }
+      }
+    });
+
+    // Second pass: distribute the remaining fraction to jobs with highest decimals
+    const remainders = jobsWithShares
+      .map(js => ({ job: js.job, rem: js.idealShare - js.floorShare }))
+      .sort((a, b) => b.rem - a.rem);
+
+    for (let i = 0; i < remainders.length; i++) {
+      if (assignedCount >= idleKittens.length) break;
+      assignments[remainders[i].job].push(idleKittens[assignedCount].id);
+      assignedCount++;
+    }
+
+    // 4. Batch assign in store
+    Object.entries(assignments).forEach(([job, ids]) => {
+      if (ids.length > 0) {
+        store.assignJobsMultiple(ids, job as JobType);
+      }
+    });
+
+    if (store.soundEnabled) playClickSound('success');
+  };
+
   return (
     <div className="flex flex-col flex-1 pb-10">
       
@@ -102,7 +224,7 @@ export default function TownTab({ store }: TownTabProps) {
       </div>
 
       {/* QUICK LABOUR ACTIONS */}
-      <div className={`flex items-center select-none transition-all duration-300 ${
+      <div className={`flex flex-wrap items-center select-none transition-all duration-300 ${
         isCompact ? 'gap-2 mx-2 mt-4 mb-4' : 'gap-3 mx-2 sm:mx-6 mt-6 mb-8'
       }`}>
         {kittens.length < maxKittens && (
@@ -127,6 +249,23 @@ export default function TownTab({ store }: TownTabProps) {
             }`}
           >
             Recall All
+          </button>
+        )}
+
+        {kittens.length > 0 && (
+          <button
+            onClick={handleSmartAssign}
+            disabled={freeKittens === 0}
+            className={`uppercase tracking-widest font-bold flex items-center gap-2 rounded-full transition-all cursor-pointer ${
+              freeKittens > 0 
+                ? 'bg-gradient-to-r from-cyan-500/15 to-blue-500/15 hover:from-cyan-500/25 hover:to-blue-500/25 text-cyan-400 border border-cyan-500/30 shadow-[0_0_15px_rgba(34,211,238,0.08)] active:scale-95' 
+                : 'text-slate-600 border border-slate-800 opacity-40 cursor-not-allowed'
+            } ${
+              isCompact ? 'text-[9px] px-4 py-2' : 'text-[10px] px-6 py-3'
+            }`}
+          >
+            <Sparkles size={isCompact ? 11 : 13} className={freeKittens > 0 ? "animate-pulse" : ""} />
+            Smart Assign
           </button>
         )}
       </div>

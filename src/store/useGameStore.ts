@@ -307,7 +307,7 @@ export const useGameStore = create<GameState>()(
         // Incorporate game speed and portal upgrades multipliers
         const chronalDilatorLevel = state.portalUpgrades?.chronalDilator ?? 0;
         const chronalMultiplier = 1 + (chronalDilatorLevel * 0.10);
-        const effectiveDelta = deltaSeconds * state.gameSpeed * 5 * chronalMultiplier; // massive speed-up for super incremental feel
+        const effectiveDelta = deltaSeconds * state.gameSpeed * 1 * chronalMultiplier; // 1x time multiplier for accurate feel
         const now = Date.now();
 
         // ----------------------------------------
@@ -444,7 +444,7 @@ export const useGameStore = create<GameState>()(
         const portalFluxMultiplier = 1 + (state.portalFlux * 0.1);
         const dimAmplifierLevel = state.portalUpgrades?.dimensionalAmplifier ?? 0;
         const dimensionalMultiplier = 1 + (dimAmplifierLevel * 0.15);
-        let productionMultiplier = certificateMultiplier * portalFluxMultiplier * dimensionalMultiplier * 10; // 10x base production for super incremental feel
+        let productionMultiplier = certificateMultiplier * portalFluxMultiplier * dimensionalMultiplier * 1; // 1x base production multiplier
 
         // Anomaly tracking and processing
         let activeAnomaly = state.activeAnomaly ? { ...state.activeAnomaly } : null;
@@ -1330,7 +1330,12 @@ export const useGameStore = create<GameState>()(
         set({
           resources: BASE_RESOURCES,
           buildings: BASE_BUILDINGS,
-          // Keep researched and upgrades for progression
+          researched: BASE_RESEARCHED,
+          upgrades: BASE_UPGRADES,
+          year: 1,
+          season: 'spring',
+          day: 1,
+          dayProgress: 0,
           unlocks: {
             wood: false,
             minerals: false,
@@ -1346,6 +1351,11 @@ export const useGameStore = create<GameState>()(
             kittens: [],
             maxKittens: 0,
             happiness: 100,
+          },
+          autoBuild: {
+            pasture: false,
+            barn: false,
+            catnipField: false,
           },
           activeCertificates: [],
           craftedCertificatesCount: { bronze: 0, silver: 0, gold: 0, infinite: 0 },

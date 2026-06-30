@@ -116,8 +116,8 @@ export default function ResourcePanel({
     >
       {/* LEFT CLUSTER: Controls & Actions */}
       <div
-        className={`flex flex-row items-center xl:items-start shrink-0 pb-1.5 xl:pb-0 border-b xl:border-b-0 xl:border-r theme-border border-dashed pr-0 overflow-x-auto scrollbar-none transition-all duration-300 ${
-          isCompact ? "gap-2.5 xl:gap-3.5 xl:pr-3.5" : "gap-4 xl:gap-6 xl:pr-6"
+        className={`flex flex-row flex-wrap sm:flex-nowrap items-center xl:items-start shrink-0 pb-1.5 xl:pb-0 border-b xl:border-b-0 xl:border-r theme-border border-dashed pr-0 transition-all duration-300 ${
+          isCompact ? "gap-2 sm:gap-2.5 xl:gap-3.5 xl:pr-3.5" : "gap-2.5 sm:gap-4 xl:gap-6 xl:pr-6"
         }`}
       >
         {/* Season & Day Calendar System */}
@@ -152,35 +152,35 @@ export default function ResourcePanel({
           }
 
           return (
-            <div className={`flex flex-col shrink-0 py-1 px-3 rounded-xl bg-slate-900/40 border border-slate-800/80 font-sans transition-all duration-300 ${
+            <div className={`flex flex-col shrink-0 py-1 px-2 sm:px-3 rounded-xl bg-slate-900/40 border border-slate-800/80 font-sans transition-all duration-300 ${
               isCompact ? 'gap-0.5' : 'gap-1'
             }`}>
-              <div className="flex items-center gap-2">
-                <span className="text-sm select-none">{activeSeasonData.icon}</span>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <span className="text-xs sm:text-sm select-none">{activeSeasonData.icon}</span>
                 <div className="flex flex-col">
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1 sm:gap-1.5">
                     <span className={`font-extrabold theme-text-main capitalize leading-none ${
-                      isCompact ? 'text-[11px]' : 'text-xs'
+                      isCompact ? 'text-[10px] sm:text-[11px]' : 'text-[11px] sm:text-xs'
                     }`}>
                       {curDimension.name}
                     </span>
-                    <span className="text-[10px] text-slate-500 font-mono">Yr {currentYear}</span>
+                    <span className="text-[9px] sm:text-[10px] text-slate-500 font-mono">Yr {currentYear}</span>
                   </div>
                   <span className={`font-mono font-extrabold ${activeSeasonData.color} mt-0.5 leading-none ${
-                    isCompact ? 'text-[11px]' : 'text-xs'
+                    isCompact ? 'text-[10px] sm:text-[11px]' : 'text-[11px] sm:text-xs'
                   }`}>
                     {activeSeasonData.label} - Day {currentDay}/40
                   </span>
                 </div>
               </div>
               
-              <div className="text-[9px] text-slate-400 font-mono tracking-wide max-w-[170px] leading-tight select-none">
+              <div className="text-[8px] sm:text-[9px] text-slate-400 font-mono tracking-wide max-w-[120px] sm:max-w-[170px] leading-tight select-none">
                 {activeSeasonData.desc}
               </div>
 
               {/* Season duration progress bar */}
-              <div className="flex flex-col gap-1 mt-1 w-full max-w-[170px]">
-                <div className="flex justify-between text-[8px] leading-none text-slate-500 font-mono">
+              <div className="flex flex-col gap-1 mt-1 w-full max-w-[120px] sm:max-w-[170px]">
+                <div className="flex justify-between text-[7px] sm:text-[8px] leading-none text-slate-500 font-mono">
                   <span>Duration</span>
                   <span>{Math.ceil(Math.max(0, 40 - currentDay))} days left</span>
                 </div>
@@ -198,7 +198,7 @@ export default function ResourcePanel({
               </div>
 
               {festivalBadge && (
-                <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-mono font-bold border ${festivalBadge.color} animate-pulse mt-0.5 max-w-[170px] overflow-hidden truncate`}>
+                <div className={`flex items-center gap-1 px-1 sm:px-1.5 py-0.5 rounded text-[7px] sm:text-[8px] font-mono font-bold border ${festivalBadge.color} animate-pulse mt-0.5 max-w-[120px] sm:max-w-[170px] overflow-hidden truncate`}>
                   {festivalBadge.label}
                 </div>
               )}
@@ -213,8 +213,8 @@ export default function ResourcePanel({
                 store.setBuyMultiplier(m);
                 if (store.soundEnabled) playClickSound("click");
               }}
-              className={`text-[10px] font-mono font-bold rounded-md transition-all cursor-pointer ${
-                isCompact ? "py-0.5 px-2 text-[9px]" : "py-1 px-2.5"
+              className={`text-[9px] sm:text-[10px] font-mono font-bold rounded-md transition-all cursor-pointer ${
+                isCompact ? "py-0.5 px-1.5 sm:px-2 text-[8px] sm:text-[9px]" : "py-1 px-2 sm:px-2.5"
               } ${
                 (store.buyMultiplier || 1) === m
                   ? "theme-text-main theme-bg-hover shadow-sm"
@@ -227,23 +227,23 @@ export default function ResourcePanel({
         </div>
 
         <div
-          className={`theme-bg-hover mx-1 hidden sm:block shrink-0 transition-all duration-300 ${
+          className={`theme-bg-hover mx-0.5 sm:mx-1 hidden sm:block shrink-0 transition-all duration-300 ${
             isCompact ? "w-px h-8" : "w-px h-10"
           }`}
         ></div>
 
         {/* Manual Actions */}
-        <div className="flex items-stretch gap-1.5 shrink-0 py-0.5 h-full font-sans">
+        <div className="flex items-stretch gap-1 shrink-0 py-0.5 h-full font-sans">
           <button
             onClick={handleManualGather}
             className={`theme-bg-card hover:theme-bg-hover border theme-border flex flex-col items-center justify-center transition-all cursor-pointer shadow-sm ${
               isCompact
-                ? "px-2.5 py-1.5 rounded-lg gap-1.0 text-2xs min-w-[62px]"
-                : "px-4 py-2 rounded-xl gap-1.5 text-xs min-w-[72px]"
+                ? "px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg gap-1 text-[8px] sm:text-2xs min-w-[55px] sm:min-w-[62px]"
+                : "px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl gap-1 sm:gap-1.5 text-xs min-w-[65px] sm:min-w-[72px]"
             }`}
           >
-            <Leaf size={isCompact ? 12 : 14} className="text-emerald-400" />
-            <span className="text-[9px] font-bold uppercase tracking-widest theme-text-muted">
+            <Leaf size={isCompact ? 10 : 13} className="text-emerald-400" />
+            <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-widest theme-text-muted">
               Harvest
             </span>
           </button>
