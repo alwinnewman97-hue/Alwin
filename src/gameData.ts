@@ -171,43 +171,43 @@ export const BUILDINGS: Record<BuildingType, BuildingDef> = {
 
 export const JOBS: Record<JobType, JobDef> = {
   farmer: {
-    name: 'Botanist Morty',
-    desc: 'Gathers sweet, psychoactive Mega Seeds from the incubator fields.',
+    name: '🌱 Mega Seeds',
+    desc: 'Gathers sweet, psychoactive Mega Seeds from incubator fields.',
     effectsDesc: '+5.0 Mega Seeds/sec',
     icon: 'Leaf'
   },
   woodcutter: {
-    name: 'Plutonium Scrapper',
+    name: '⚡ Plutonium',
     desc: 'Dredges toxic Plutonium-239 isotopes for generator fuel.',
     effectsDesc: '+0.10 Plutonium/sec',
     icon: 'Trees'
   },
   scholar: {
-    name: 'Scholar Morty',
+    name: '🔬 Portal Tech',
     desc: 'Analyses dark matter configurations and cosmological science.',
-    effectsDesc: '+0.25 Technology/sec',
+    effectsDesc: '+0.25 Tech/sec',
     icon: 'GraduationCap'
   },
   miner: {
-    name: 'Crystal Extractor',
-    desc: 'Mines subterranean Kalaxian shards and space ores from alien crags.',
+    name: '⛏️ Crystals',
+    desc: 'Mines subterranean Kalaxian shards and space ores.',
     effectsDesc: '+0.18 Crystals/sec',
     icon: 'Pickaxe'
   },
   priest: {
-    name: 'Schwifty Musician',
-    desc: 'Sings hit songs to get the crowd Schwifty, raising Citadel Vibe.',
+    name: '🔊 Schwifty Vibes',
+    desc: 'Sings hit songs to raise Citadel Vibe.',
     effectsDesc: '+0.15 Vibe/sec',
     icon: 'Flame'
   },
   darkMatterScientist: {
-    name: 'Dark Matter Scientist',
+    name: '🌑 Dark Matter',
     desc: 'Processes raw space vacuum into usable dark matter.',
     effectsDesc: '+0.05 Dark Matter/sec',
     icon: 'Atom'
   },
   fluidEngineer: {
-    name: 'Portal Fluid Engineer',
+    name: '🧪 Portal Fluid',
     desc: 'Maintains fluid processors to generate Portal Fluid.',
     effectsDesc: '+0.02 Portal Fluid/sec',
     icon: 'FlaskConical'

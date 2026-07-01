@@ -28,6 +28,7 @@ export default function TownTab({ store }: TownTabProps) {
   const maxKittens = store.village?.maxKittens || 0;
   const isCompact = store.density === 'compact';
   const [settingsOpen, setSettingsOpen] = React.useState(false);
+  const [clonesOpen, setClonesOpen] = React.useState(kittens.length <= 5);
   const [presetName, setPresetName] = React.useState('');
 
   const jobCounts: Record<JobType | 'unemployed', number> = {
@@ -662,52 +663,88 @@ export default function TownTab({ store }: TownTabProps) {
 
       {/* INDIVIDUAL KITTENS POPULATION MATRIX */}
       {kittens.length > 0 && (
-        <div className="mt-10 mx-2 sm:mx-6 select-none animate-fadeIn">
-          <span className="text-[10px] uppercase font-bold theme-text-muted tracking-widest leading-none block mb-4">Portal Clone Directory</span>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4 animate-fadeIn">
-            {kittens.map((kitten) => (
-              <div 
-                key={kitten.id}
-                className="p-2.5 sm:p-4 border theme-border hover:theme-border-active transition-all theme-bg-card flex flex-row sm:flex-col items-center sm:items-stretch justify-between gap-3 sm:gap-4 rounded-xl"
-              >
-                <div className="min-w-0 flex-1 sm:flex-initial">
-                  <span className="font-bold text-xs sm:text-sm tracking-wide theme-text-main block truncate leading-tight mb-0.5 sm:mb-1.5">
-                    {kitten.name} {kitten.surname}
-                  </span>
-                  <span className="text-[9px] sm:text-[10px] theme-text-muted font-mono block uppercase">
-                    GEN {kitten.level} • {kitten.trait || 'Normal'}
-                  </span>
-                </div>
-
-                {/* Job Dropdown Selection */}
-                <select
-                  value={kitten.job}
-                  onChange={(e) => handleAssignJob(kitten.id, e.target.value as JobType | 'unemployed')}
-                  className="theme-bg-app border theme-border theme-text-main text-[11px] px-2.5 py-1.5 sm:px-3 sm:py-2 shrink-0 focus:outline-none focus:theme-border cursor-pointer font-sans rounded-md max-w-[130px] xs:max-w-[160px] sm:max-w-none text-right sm:text-left font-semibold"
-                >
-                  <option value="unemployed">💤 Idle</option>
-                  <option value="farmer">🌱 Mega Seeds</option>
-                  <option value="woodcutter">⚡ Plutonium</option>
-                  {store.buildings.library > 0 && (
-                    <option value="scholar">🔬 Portal Tech</option>
-                  )}
-                  {store.unlocks.minerals && (
-                    <option value="miner">⛏️ Crystals</option>
-                  )}
-                  {store.unlocks.culture && store.buildings.amphitheatre > 0 && (
-                    <option value="priest">🔊 Schwifty Vibes</option>
-                  )}
-                  {store.unlocks.darkMatter && (
-                    <option value="darkMatterScientist">🌑 Dark Matter</option>
-                  )}
-                  {store.unlocks.fluid && (
-                    <option value="fluidEngineer">🧪 Portal Fluid</option>
-                  )}
-                </select>
-              </div>
-            ))}
+        <div className="mt-8 mx-2 sm:mx-6 select-none animate-fadeIn border theme-border rounded-xl theme-bg-card/30 overflow-hidden">
+          <div 
+            onClick={() => {
+              setClonesOpen(!clonesOpen);
+              if (store.soundEnabled) playClickSound('click');
+            }}
+            className="flex justify-between items-center p-4 cursor-pointer hover:bg-slate-950/10 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <Users size={14} className="text-cyan-400 shrink-0" />
+              <span className="text-[10px] sm:text-xs uppercase font-bold theme-text-main tracking-widest leading-none">
+                Portal Clone Directory ({kittens.length})
+              </span>
+            </div>
+            <div className="theme-text-muted hover:theme-text-main transition-colors">
+              {clonesOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </div>
           </div>
+
+          {clonesOpen && (
+            <div className="p-3 sm:p-4 border-t theme-border">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 animate-fadeIn">
+                {kittens.map((kitten) => {
+                  const jobEmoji = 
+                    kitten.job === 'farmer' ? '🌱' : 
+                    kitten.job === 'woodcutter' ? '⚡' : 
+                    kitten.job === 'scholar' ? '🔬' : 
+                    kitten.job === 'miner' ? '⛏️' : 
+                    kitten.job === 'darkMatterScientist' ? '🌑' : 
+                    kitten.job === 'fluidEngineer' ? '🧪' : 
+                    kitten.job === 'priest' ? '🔊' : '💤';
+
+                  return (
+                    <div 
+                      key={kitten.id}
+                      className="p-2 sm:p-2.5 border theme-border hover:theme-border-active transition-all theme-bg-card flex flex-row items-center justify-between gap-3 rounded-lg shadow-sm"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-base shrink-0 w-7 h-7 flex items-center justify-center rounded-full bg-slate-950/25">
+                          {jobEmoji}
+                        </span>
+                        <div className="min-w-0">
+                          <span className="font-bold text-[11px] sm:text-xs tracking-wide theme-text-main block truncate leading-tight">
+                            {kitten.name} {kitten.surname}
+                          </span>
+                          <span className="text-[9px] theme-text-muted font-mono block uppercase">
+                            GEN {kitten.level} • {kitten.trait || 'Normal'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Job Dropdown Selection */}
+                      <select
+                        value={kitten.job}
+                        onChange={(e) => handleAssignJob(kitten.id, e.target.value as JobType | 'unemployed')}
+                        className="theme-bg-app border theme-border theme-text-main text-[10px] px-2 py-1 shrink-0 focus:outline-none focus:theme-border cursor-pointer font-sans rounded max-w-[110px] xs:max-w-[130px] text-right sm:text-left font-semibold"
+                      >
+                        <option value="unemployed">💤 Idle</option>
+                        <option value="farmer">🌱 Mega Seeds</option>
+                        <option value="woodcutter">⚡ Plutonium</option>
+                        {store.buildings.library > 0 && (
+                          <option value="scholar">🔬 Portal Tech</option>
+                        )}
+                        {store.unlocks.minerals && (
+                          <option value="miner">⛏️ Crystals</option>
+                        )}
+                        {store.unlocks.culture && store.buildings.amphitheatre > 0 && (
+                          <option value="priest">🔊 Schwifty Vibes</option>
+                        )}
+                        {store.unlocks.darkMatter && (
+                          <option value="darkMatterScientist">🌑 Dark Matter</option>
+                        )}
+                        {store.unlocks.fluid && (
+                          <option value="fluidEngineer">🧪 Portal Fluid</option>
+                        )}
+                      </select>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
